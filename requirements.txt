@@ -1,0 +1,15 @@
+beautifulsoup4==4.9.1
+certifi==2020.4.5.1
+cffi==1.14.0
+chardet==3.0.4
+colorama==0.4.3
+esprima==4.0.1
+gevent==20.5.2
+greenlet==0.4.15
+idna==2.9
+pycparser==2.20
+requests==2.23.0
+soupsieve==2.0.1
+urllib3==1.25.9
+zope.event==4.4
+zope.interface==5.1.0
