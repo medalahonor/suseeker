@@ -2,7 +2,6 @@ import __init__  # ДОЛЖЕН БЫТЬ ПЕРВЫМ ИМПОРТОМ !!!
 
 from time import time
 
-import argparse
 import sys
 
 from lib.arguments import parse_args, is_args_valid, prepare_args
@@ -13,28 +12,9 @@ from lib.finders.params_miner import get_params_from_html
 from lib.utils.logger import Logger
 from lib.utils.request_helper import RequestHelper, RequestInfo, get_request_objects
 
-
-def test_args(arguments: argparse.Namespace):
-    arguments.raw_requests = 'requests'
-    arguments.allow_redirects = True
-    arguments.verbosity = 3
-
-    arguments.find_params = True
-
-    arguments.find_headers = True
-
-    arguments.timeout = 15
-    arguments.threads = 10
-    arguments.proxy = 'https://127.0.0.1:8080'
-
-    return arguments
-
-
 if __name__ == '__main__':
     # Обработка аргументов командной строки
     args = parse_args()
-    # Добавление параметров в объект args для удобства запуска через IDE
-    test_args(args)
     # Проверка переданных аргументов на валидность и достаточность
     if not is_args_valid(args):
         sys.exit(1)
