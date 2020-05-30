@@ -264,7 +264,6 @@ class ParamFinder(BaseFinder):
             requests_list.append(info)
 
         if not len(requests_list):
-            self.logger.info('Нет запросов для поиска параметров в их теле')
             return results
 
         # Устанавливаем размер порций для поиска параметров в теле запроса
