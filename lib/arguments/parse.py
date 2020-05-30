@@ -5,7 +5,9 @@ from lib.arguments.help import *
 
 epilog = ''' Примеры:
 
-python3 suseeker.py -r requests/ --follow -fh -fp -t 6 --timeout 15 --retry 2
+python3 suseeker.py -u urls.txt -m POST -r requests/ --follow -fh -fp -t 6 --timeout 15 --retry 2
+    -u urlst.txt - URL-адрес или файл с адресами (каждый с новой строки)
+    -m POST - Метод запроса для адресов из аргумента -u
     -r requests/ - папка с сырыми запросами (можно указать файл)
     --follow - следовать редиректам
     -fh - запуск модуля по поиску HTTP-заголовков 
