@@ -8,7 +8,7 @@ def is_args_valid(arguments: argparse.Namespace) -> bool:
     :param arguments:
     """
     if not arguments.url and not arguments.raw_requests:
-        print('Требуется указать один из аргументов')
+        print('Требуется указать один из аргументов -u или -r')
         return False
 
     if not os.path.exists(arguments.param_wordlist):
