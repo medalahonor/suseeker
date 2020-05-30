@@ -225,8 +225,7 @@ def get_request_object(method, url, headers, body, retry: int, timeout: int, pro
     Для определения схемы HTTP(S) отправляется HEAD HTTP-запрос и коду ответа решается данный вопрос
     """
     scheme = 'https'
-
-    prepared_request = requests.Request('HEAD', scheme + '://' + url, headers, data=body).prepare()
+    prepared_request = requests.Request('HEAD', scheme + '://' + url.lstrip('/'), headers, data=body).prepare()
 
     try:
         RequestHelper.do_request(prepared_request, retry, timeout, proxies, allow_redirects, logger, True)

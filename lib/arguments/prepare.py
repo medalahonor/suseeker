@@ -2,7 +2,7 @@ import argparse
 import os
 import random
 import re
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 
 from lib.utils.constants import USER_AGENTS
 from lib.utils.request_helper import parse_raw_request
@@ -36,9 +36,10 @@ def prepare_args(arguments: argparse.Namespace):
                 if not (addr.scheme and addr.netloc):
                     continue
 
-                raw_request = (arguments.method, url, {'User-Agent': random.choice(USER_AGENTS), 'Host': addr.netloc,
+                prepared_url = ('', addr.netloc, addr.path, addr.params, addr.query, addr.fragment)
+                raw_request = (arguments.method, urlunparse(prepared_url).lstrip('/'), {'User-Agent': random.choice(USER_AGENTS), 'Host': addr.netloc,
                                             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                                            'Accept-Language': 'en-US,en;q=0.5', 'Accept-Encoding': 'gzip, deflate'})
+                                            'Accept-Language': 'en-US,en;q=0.5', 'Accept-Encoding': 'gzip, deflate'}, '')
                 raw_requests.append(raw_request)
 
     arguments.raw_requests = raw_requests
@@ -46,6 +47,7 @@ def prepare_args(arguments: argparse.Namespace):
     # --header
     if arguments.additional_headers:
         headers = dict()
+
         for header in arguments.additional_headers:
             k, v = re.split(':\s*', header.strip(), maxsplit=1)
             headers[k] = v

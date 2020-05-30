@@ -263,6 +263,10 @@ class ParamFinder(BaseFinder):
 
             requests_list.append(info)
 
+        if not len(requests_list):
+            self.logger.info('Нет запросов для поиска параметров в их теле')
+            return results
+
         # Устанавливаем размер порций для поиска параметров в теле запроса
         self.logger.info('Установка размера порций для поиска параметров в теле запроса')
         self.set_body_param_buckets(requests_list)
@@ -280,6 +284,9 @@ class ParamFinder(BaseFinder):
         return results
 
     def set_body_param_buckets(self, requests_list: List[RequestInfo]):
+        if not len(requests_list):
+            return
+
         if not self.arguments.disable_dynamic_headers:
             # Для каждого сайта выбираем первый запрос из списка
             netloc_info = dict()
@@ -316,6 +323,9 @@ class ParamFinder(BaseFinder):
                 info.body_param_bucket = self.arguments.param_bucket
 
     def set_url_param_buckets(self, requests_list: List[RequestInfo]):
+        if not len(requests_list):
+            return
+
         if not self.arguments.disable_dynamic_headers:
             # Для каждого сайта выбираем первый запрос из списка
             netloc_info = dict()

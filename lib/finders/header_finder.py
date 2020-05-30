@@ -184,6 +184,9 @@ class HeaderFinder(BaseFinder):
         return self.find_secret_headers(requests_list)
 
     def set_headers_bucket(self, requests_list: List[RequestInfo]):
+        if not len(requests_list):
+            return
+
         # Если требуется для каждого веб-приложения выбрать оптимальное значение `header_bucket`
         if not self.arguments.disable_dynamic_headers:
             # Для каждого сайта выбираем первый запрос из списка

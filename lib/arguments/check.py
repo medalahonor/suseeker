@@ -21,8 +21,8 @@ def is_args_valid(arguments: argparse.Namespace) -> bool:
             print('Некорректный формат аргумента -u')
             return False
 
-    if arguments.raw_request:
-        if not os.path.exists(arguments.raw_request):
+    if arguments.raw_requests:
+        if not os.path.exists(arguments.raw_requests):
             print('Указанного пути -r не существует')
             return False
 
