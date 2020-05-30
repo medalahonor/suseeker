@@ -22,6 +22,11 @@ if __name__ == '__main__':
     prepare_args(args)
 
     logger = Logger(args)
+
+    if not args.raw_requests:
+        logger.error('Нет запросов для проверки, проверьте правильность указанных аргументов --url и -r')
+        sys.exit()
+
     logger.info('Обработка сырых запросов')
 
     start = time()

@@ -23,26 +23,33 @@ def prepare_raw_requests(arguments: argparse.Namespace):
                 if content: raw_requests.append(parse_raw_request(content))
                 file.close()
 
+    return raw_requests
+
 
 def prepare_url(arguments: argparse.Namespace):
     raw_requests = []
 
+    urls = []
     if os.path.isfile(arguments.url):
         file = open(arguments.url)
-
         for url in file:
-            url = url.strip()
-            addr = urlparse(url)
+            urls.append(url.strip())
+        file.close()
+    else:
+        urls.append(arguments.url)
 
-            if not (addr.scheme and addr.netloc):
-                continue
+    for url in urls:
+        addr = urlparse(url)
 
-            prepared_url = ('', addr.netloc, addr.path, addr.params, addr.query, addr.fragment)
-            raw_request = (arguments.method, urlunparse(prepared_url).lstrip('/'),
-                           {'User-Agent': random.choice(USER_AGENTS), 'Host': addr.netloc,
-                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                            'Accept-Language': 'en-US,en;q=0.5', 'Accept-Encoding': 'gzip, deflate'}, '')
-            raw_requests.append(raw_request)
+        if not (addr.scheme and addr.netloc):
+            continue
+
+        prepared_url = ('', addr.netloc, addr.path, addr.params, addr.query, addr.fragment)
+        raw_request = (arguments.method, urlunparse(prepared_url).lstrip('/'),
+                       {'User-Agent': random.choice(USER_AGENTS), 'Host': addr.netloc,
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'Accept-Language': 'en-US,en;q=0.5', 'Accept-Encoding': 'gzip, deflate'}, '')
+        raw_requests.append(raw_request)
 
     return raw_requests
 
