@@ -10,9 +10,9 @@ from lib.utils.request_helper import parse_raw_request
 
 def prepare_args(arguments: argparse.Namespace):
     """ Подготавливает параметры для программы """
-    # --raw-request
+    # --raw-request и --url
+    raw_requests = []
     if arguments.raw_requests:
-        raw_requests = []
         if os.path.isfile(arguments.raw_requests):
             with open(arguments.raw_request) as file:
                 content = file.read()
@@ -24,11 +24,23 @@ def prepare_args(arguments: argparse.Namespace):
                     content = file.read()
                     if content: raw_requests.append(parse_raw_request(content))
                     file.close()
-    else:
-        raw_requests = (
-            'GET', arguments.url, {'User-Agent': random.choice(USER_AGENTS), 'Host': urlparse(arguments.url).netloc,
-                                   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                                   'Accept-Language': 'en-US,en;q=0.5', 'Accept-Encoding': 'gzip, deflate'})
+
+    if arguments.url:
+        if os.path.isfile(arguments.url):
+            file = open(arguments.url)
+
+            for url in file:
+                url = url.strip()
+                addr = urlparse(url)
+
+                if not (addr.scheme and addr.netloc):
+                    continue
+
+                raw_request = (arguments.method, url, {'User-Agent': random.choice(USER_AGENTS), 'Host': addr.netloc,
+                                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                                            'Accept-Language': 'en-US,en;q=0.5', 'Accept-Encoding': 'gzip, deflate'})
+                raw_requests.append(raw_request)
+
     arguments.raw_requests = raw_requests
 
     # --header

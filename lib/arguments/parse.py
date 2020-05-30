@@ -22,6 +22,7 @@ def parse_args() -> argparse.Namespace:
 
     main_group = parser.add_argument_group('Основные настройки')
     main_group.add_argument('-u', '--url', dest='url', help=URL_HELP)
+    main_group.add_argument('-m', '--method', dest='method', default='GET', help=METHOD_HELP)
     main_group.add_argument('-r', '--raw-requests', dest='raw_requests', help=RAW_REQUESTS_HELP)
     main_group.add_argument('-H', '--header', dest='additional_headers', type=list, action='append',
                             help=ADDITIONAL_HEADERS_HELP)
