@@ -2,7 +2,7 @@
 
 Утилита для поиска скрытых HTTP-заголовков и параметров в URL, теле запроса ~~и Cookie-заголовке~~
 
-[![asciicast](https://asciinema.org/a/6aNNovb70GijKjkHNMAptFI2n.svg)](https://asciinema.org/a/6aNNovb70GijKjkHNMAptFI2n)
+[![asciicast](https://asciinema.org/a/gMg8qYnC34bSNsmg8vMcNboLS.svg)](https://asciinema.org/a/gMg8qYnC34bSNsmg8vMcNboLS)
 
 ## Особенности
 * Конкурентность посредством использования **Greenlets**
