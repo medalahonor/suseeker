@@ -112,19 +112,19 @@ class Reporter:
     def results_to_light(results):
         width, _ = shutil.get_terminal_size((80, 24))
         report = ''
-        current_line = ''
+        current_line = ' ' * 12
 
         for url in results:
-            current_line = '\n' + url + ': '
+            report += '\n' + url + ':\n'
 
-            if len(current_line) >= width:
-                report += current_line + '\n'
-                current_line = ' ' * 12
+            # if len(current_line) >= width:
+            #     report += current_line + '\n'
+            #     current_line = ' ' * 12
 
             for type in results[url]:
                 for param_info in results[url][type]:
                     name = param_info['param']
-                    pair = f'{type}:{name}; '
+                    pair = f'{type}: {name}; '
 
                     if len(current_line) + len(pair) > width:
                         report += current_line + '\n'

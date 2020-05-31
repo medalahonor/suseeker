@@ -27,7 +27,8 @@ def parse_args() -> argparse.Namespace:
     main_group.add_argument('-m', '--method', dest='method', default='GET', help=METHOD_HELP)
     main_group.add_argument('-r', '--raw-requests', dest='raw_requests', help=RAW_REQUESTS_HELP)
     main_group.add_argument('-o', '--output', dest='output', help=OUTPUT_HELP)
-    main_group.add_argument('-of', '--output-format', dest='output_format', default='table', choices=OutputFormats.get_list(), help=OUTPUT_FORMAT_HELP)
+    main_group.add_argument('-of', '--output-format', dest='output_format', default=OutputFormats.LIGHT,
+                            choices=OutputFormats.get_list(), help=OUTPUT_FORMAT_HELP)
     main_group.add_argument('-H', '--header', dest='additional_headers', action='append',
                             help=ADDITIONAL_HEADERS_HELP)
     main_group.add_argument('--follow', dest='allow_redirects', default=False, action='store_true',
@@ -53,7 +54,8 @@ def parse_args() -> argparse.Namespace:
                                   help=PARAM_WORDLIST_HELP)
     parameters_group.add_argument('-pb', '--param-bucket', dest='param_bucket', type=int, default=2048,
                                   help=PARAM_BUCKET_HELP)
-    parameters_group.add_argument('-ddp', '--disable-dynamic-params', dest='disable_dynamic_params', action='store_true',
+    parameters_group.add_argument('-ddp', '--disable-dynamic-params', dest='disable_dynamic_params',
+                                  action='store_true',
                                   default=False, help=DISABLE_DYNAMIC_PARAMS_HELP)
 
     cookies_group = parser.add_argument_group('Настройка поиска cookies')

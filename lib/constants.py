@@ -30,10 +30,11 @@ USER_AGENTS = [
 
 
 class ParamLocation:
-    URL = "URL param"
-    HEADER = "Header"
-    BODY = "Body"
-    JSON = "Json"
+    URL = "URL"
+    HEADER = "HEADER"
+    BODY = "BODY"
+    JSON = "JSON"
+    COOKIE = "COOKIE"
 
 
 class OutputFormats:
