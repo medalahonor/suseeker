@@ -1,9 +1,10 @@
 import json
 from argparse import Namespace
-from pprint import pprint
 import shutil
 
-from lib.constants import OutputFormats
+from colorama import Fore, Style
+
+from lib.constants import OutputFormats, ParamLocation
 
 
 class Reporter:
@@ -120,7 +121,19 @@ class Reporter:
             for param_type in results[url]:
                 for param_info in results[url][param_type]:
                     name = param_info['param']
-                    pair = f'{param_type}: {name}; '
+
+                    if param_type == ParamLocation.HEADER:
+                        type_color = Fore.YELLOW + param_type + Style.RESET_ALL
+                    elif param_type == ParamLocation.BODY:
+                        type_color = Fore.GREEN + param_type + Style.RESET_ALL
+                    elif param_type == ParamLocation.COOKIE:
+                        type_color = Fore.CYAN + param_type + Style.RESET_ALL
+                    elif param_type == ParamLocation.JSON:
+                        type_color = Fore.MAGENTA + param_type + Style.RESET_ALL
+                    else:
+                        type_color = param_type
+
+                    pair = f'{type_color}: {name}; '
 
                     if len(current_line) + len(pair) > width:
                         report += current_line + '\n'
