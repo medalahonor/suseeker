@@ -117,14 +117,10 @@ class Reporter:
         for url in results:
             report += '\n' + url + ':\n'
 
-            # if len(current_line) >= width:
-            #     report += current_line + '\n'
-            #     current_line = ' ' * 12
-
-            for type in results[url]:
-                for param_info in results[url][type]:
+            for param_type in results[url]:
+                for param_info in results[url][param_type]:
                     name = param_info['param']
-                    pair = f'{type}: {name}; '
+                    pair = f'{param_type}: {name}; '
 
                     if len(current_line) + len(pair) > width:
                         report += current_line + '\n'
@@ -132,7 +128,8 @@ class Reporter:
 
                     current_line += pair
 
-        if current_line:
-            report += current_line +'\n'
+            if current_line:
+                report += current_line +'\n'
+                current_line = ' ' * 12
 
         return report
