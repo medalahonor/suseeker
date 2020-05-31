@@ -1,7 +1,7 @@
 import json
 from argparse import Namespace
-from collections import defaultdict
 from pprint import pprint
+import shutil
 
 from lib.constants import OutputFormats
 
@@ -90,7 +90,6 @@ class Reporter:
 
     @staticmethod
     def results_to_json(results):
-        # results_copy = defaultdict(lambda: defaultdict(list))
         results_copy = dict()
 
         for url in results:
@@ -111,15 +110,29 @@ class Reporter:
 
     @staticmethod
     def results_to_light(results):
+        width, _ = shutil.get_terminal_size((80, 24))
         report = ''
+        current_line = ''
 
         for url in results:
-            report += url + ': '
+            current_line = '\n' + url + ': '
+
+            if len(current_line) >= width:
+                report += current_line + '\n'
+                current_line = ' ' * 12
+
             for type in results[url]:
                 for param_info in results[url][type]:
                     name = param_info['param']
-                    report += f'{type}:{name}; '
+                    pair = f'{type}:{name}; '
 
-            report += '\n'
+                    if len(current_line) + len(pair) > width:
+                        report += current_line + '\n'
+                        current_line = ' ' * 12
+
+                    current_line += pair
+
+        if current_line:
+            report += current_line +'\n'
 
         return report
