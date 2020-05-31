@@ -1,20 +1,42 @@
 import math
-import re
 from collections import defaultdict
-from typing import Union, Callable, Tuple
+from typing import Union, Callable, Tuple, List
 
 import gevent
 from gevent.queue import Queue
 from requests import PreparedRequest, Response
 
-from lib.utils.constants import *
 from lib.utils.request_helper import RequestHelper, RequestInfo
-from lib.utils.workers import GuessWorker
 
 
 class BaseFinder(RequestHelper):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.bucket_size_cache = defaultdict(dict)
+
+    def determine_bucket_size(self, info: RequestInfo):
+        raise NotImplementedError
+
+    def find_secrets(self, info: RequestInfo, words: List[str]):
+        raise NotImplementedError
+
+    def get_bucket_size(self, info: RequestInfo):
+        """ Возвращает общие число хидеров в запросе """
+        raise NotImplementedError
+
+    def get_word_chunks(self, info: RequestInfo):
+        raise NotImplementedError
+
+    def is_info_searchable(self, info: RequestInfo):
+        raise NotImplementedError
+
+    def set_bucket_size(self, info: RequestInfo):
+        """ Устанавивает для запроса в `info` общее число хидеров """
+        raise NotImplementedError
+
+    def setup_requests_info(self, info_list: List[RequestInfo]):
+        raise NotImplementedError
 
     def do_request(self, prepared_request: PreparedRequest, **kwargs) -> Union[Response, None]:
         """ Выполняет подготовленных запрос с отчисткой промежуточного кэша
@@ -26,41 +48,12 @@ class BaseFinder(RequestHelper):
         return super().do_request(prepared_request, self.retry, self.timeout, self.proxies,
                                   self.arguments.allow_redirects, self.logger)
 
-    def do_work(self, worker_builder: GuessWorker, work: Callable, args_queue: Queue, results_queue: Queue):
-        """ Конкурентно выполняет заданную работу `work`
-
-        Создает воркеры ``
-        :param worker_builder: Создает объекты воркеров, наследованных от `GuessWorker`
-        :param work: Работа, выполняемая в рамках `worker_builder`
-        :param args_queue:  Очередь аргументов для функции `work`
-        :param results_queue:   Очередь с результатами работы воркеров
-        :return:
-        """
-        # Запускаем воркеры
-        workers = [worker_builder(work, args_queue, results_queue, self.logger)
-                   for _ in range(self.threads)]
-
-        greenlets = [gevent.spawn(worker.run) for worker in workers]
-
-        # Ждем заверщения работы
-        while any([worker.is_running() for worker in workers]) or args_queue.qsize():
-            gevent.sleep(0)
-
-        # Выключаем воркеры
-        for worker in workers:
-            worker.finish()
-
-        # Ждем выключения
-        while not all([worker.is_stopped() for worker in workers]):
-            gevent.sleep(0.1)
-
-        gevent.joinall(greenlets)
-
     def filter_requests(self, *args, **kwargs):
         kwargs.update({'logger': self.logger})
         return super().filter_requests(*args, **kwargs)
 
-    def get_optimal_bucket(self, info: RequestInfo, min_chunk: int, add_random: Callable) -> int:
+    def get_optimal_bucket(self, info: RequestInfo, min_chunk: int, add_random: Callable,
+                           additional_size: Callable) -> Union[int, None]:
         """ Ищет оптимальный размер порции параметров соотношение (Длина порции) / (время ответа)
 
         :param info:
@@ -101,9 +94,6 @@ class BaseFinder(RequestHelper):
             results = [response.status_code == info.response.status_code if response is not None else response
                        for response in responses]
 
-            self.logger.debug(
-                f'results = {results}; l,c,r = [{left}, {cur}, {right}]; lb,rb = {left_border, right_border}')
-
             # Если все запросы не получили ответа от сервера, то сдвигаемся влево
             if not any(results):
                 right_border = left
@@ -112,7 +102,6 @@ class BaseFinder(RequestHelper):
                 cur = right >> 1
                 left = cur >> 1
 
-                self.logger.debug(f'optimal_size = {optimal_size}')
                 continue
 
             # Иначе выбираем среди ответов оптимальный
@@ -127,8 +116,6 @@ class BaseFinder(RequestHelper):
                 if rate > optimal_rate and result:
                     optimal_rate = rate
                     optimal_size = size
-
-            self.logger.debug(f'optimal_size = {optimal_size}')
 
             # Cмотрим, в какую сторону развивается динамика
             max_rate = max(rates)
@@ -204,64 +191,13 @@ class BaseFinder(RequestHelper):
                 left = cur >> 1
 
         # Если по итогу оптимальный размер меньше минимально требуемого, то вернуть минимально требуемый требуемый
-        if optimal_size and optimal_size < min_chunk:
-            return min_chunk
+        if optimal_size is not None:
+            if optimal_size < min_chunk < right_border:
+                return min_chunk + additional_size(info)
+
+            return optimal_size + additional_size(info)
 
         return optimal_size
-
-    def check_status_code_reason(self, reasons: list, info: RequestInfo, response: Response):
-        # Если изменился код ответа
-        if info.response.status_code != response.status_code:
-            orig_status_code = info.response.status_code
-            status_code = response.status_code
-            reasons.append({'reason': DIFF_STATUS_CODE, 'value': f'{status_code} ({orig_status_code})'})
-
-    def check_content_type_reason(self, reasons: list, info: RequestInfo, response: Response):
-        # Если изменился тип контента
-        if info.response.headers.get('Content-Type') != response.headers.get('Content-Type'):
-            orig_content_type = info.response.headers.get('Content-Type')
-            content_type = response.headers.get('Content-Type')
-
-            reasons.append(
-                {'reason': DIFF_CONTENT_TYPE, 'value': f'{content_type} ({orig_content_type})'})
-
-    def check_content_length_reason(self, reasons: list, info: RequestInfo, response: Response):
-        # Если изменилась длина контента
-        if info.response.headers.get('Content-Length', 0) != response.headers.get('Content-Length', 0):
-            # Если оригинальный ответ - html документ
-            if info.response_html_tags_count > 0:
-                # То дополнительно проверяем число тэгов html запроса
-                new_html_tags_count = info.count_html_tags(response.text)
-
-                if new_html_tags_count != info.response_html_tags_count:
-                    reasons.append({'reason': DIFF_HTML_TAGS_COUNT,
-                                    'value': f'{new_html_tags_count} ({info.response_html_tags_count})'})
-            else:
-                orig_content_length = info.response.headers.get('Content-Length', 0)
-                content_length = response.headers.get('Content-Length', 0)
-                reasons.append({'reason': DIFF_CONTENT_LENGTH,
-                                'value': f'{content_length} ({orig_content_length})'})
-
-    def check_header_value_reflection_reason(self, reasons: list, info: RequestInfo, response: Response):
-        # Если базовое значение заголовка отражается в ответе
-        if info.base_header_value in response.text:
-            orig_reflections = len(re.findall(info.base_header_value, info.response.text))
-            reflections = len(re.findall(info.base_header_value, response.text))
-
-            reasons.append({'reason': HEADER_VALUE_REFLECTION,
-                            'value': f'{reflections} ({orig_reflections})'})
-
-    def check_param_value_reflection_reason(self, reasons: list, info: RequestInfo, response: Response):
-        # Если базовое значение параметра отражается в ответе
-        if info.base_param_value in response.text:
-            # То дополнительно проверяем, чтобы отраженное значение не было частью URL
-            reflections = len([match for match in
-                           re.findall(f'(https?://[^;\'"]+)?({info.base_param_value})', response.text) if not match[0]])
-
-            if reflections:
-                orig_reflections = len([match for match in
-                           re.findall(f'(https?://[^;\'"]+)?({info.base_param_value})', info.response.text) if not match[0]])
-                reasons.append({'reason': PARAM_VALUE_REFLECTION, 'value': f'{reflections} ({orig_reflections})'})
 
     @staticmethod
     def parse_results_queue(results_queue: Queue):

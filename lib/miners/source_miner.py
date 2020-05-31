@@ -2,7 +2,7 @@ import argparse
 import logging
 import random
 from collections import defaultdict
-from typing import List, Callable
+from typing import List
 from urllib.parse import urlparse
 
 import bs4
@@ -11,36 +11,9 @@ import gevent
 import requests
 from gevent.queue import Queue
 
-from lib.utils.constants import USER_AGENTS
+from lib.constants import USER_AGENTS
 from lib.utils.request_helper import RequestInfo
-from lib.utils.workers import AbstractWorker
-
-
-class GetScriptsWorker(AbstractWorker):
-    def __init__(self, work: Callable, args_queue: Queue, results_queue: Queue):
-        super().__init__(work, args_queue, results_queue)
-
-    def run(self):
-        # Переключения контекста для запуска других воркеров
-        gevent.sleep(0)
-
-        self._running = True
-        self._stopped = False
-
-        while not self._finish:
-            try:
-                netloc, src = self.args_queue.get(timeout=1)
-            except gevent.queue.Empty:
-                self._running = False
-                continue
-
-            self._running = True
-
-            result = self.work(netloc, src)
-            self.results_queue.put(result)
-
-        self._running = False
-        self._stopped = True
+from lib.workers.get_script import GetScriptsWorker
 
 
 def get_src_script(netloc, src, allow_redirects: bool, timeout: int, proxies: dict, logger: logging.Logger):

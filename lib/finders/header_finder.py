@@ -1,26 +1,27 @@
 import random
-from math import ceil
-from typing import Tuple, Union, List
+from collections import defaultdict
+from typing import Union, List, Tuple
 
-import gevent
 import requests
-from gevent.queue import Queue
-from requests import PreparedRequest, Session, Response
+from requests import PreparedRequest, Response
 
+import lib.checker as checker
 from lib.finders.base_finder import BaseFinder
-from lib.utils.constants import *
+from lib.constants import *
 from lib.utils.request_helper import RequestInfo
-from lib.utils.workers import GuessWorker
 
 
 class HeaderFinder(BaseFinder):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.wordlist = self.arguments.header_wordlist
+        self.headers_wordlist = self.arguments.header_wordlist
 
-        self.max_header_name = max((len(h) for h in self.wordlist))
+        self.bucket_size_cache = defaultdict(dict)
+
+        self.max_header_name = max((len(h) for h in self.headers_wordlist))
         self.max_header_value = 18
+        self.min_header_chunk = 1
 
         self.random_param_name_len = 10
         self.random_param_value_len = 10
@@ -49,61 +50,38 @@ class HeaderFinder(BaseFinder):
         self.add_headers(request, headers)
         request.headers.update(headers)
 
-    def check_header_count(self, info: RequestInfo, headers_count: int) -> Union[bool, None]:
-        """ Проверяет, допустимо ли заданное число `header_count` заголовков в запросе
+    def check_response(self, info: RequestInfo, response: Response):
+        """ Проверяет ответ на наличие аномалий
 
         :param info:
-        :param headers_count: Число случайных заголовков
+        :param response:
+        :return:
         """
-        request = info.copy_request()
-        self.add_random_headers(request, headers_count)
+        reasons = []
 
-        response = self.do_request(request, )
-        if response is None:
-            return None
+        checker.check_status_code_reason(reasons, info, response)
+        checker.check_content_type_reason(reasons, info, response)
+        checker.check_content_length_reason(reasons, info, response)
+        checker.check_header_value_reflection_reason(reasons, info, response)
 
-        if response.status_code != info.response.status_code:
-            return False
+        return reasons
 
-        return True
-
-    def check_secret_headers(self, info: RequestInfo, words: list):
-        """ Проверяет изменения в ответе для заданного списка заголовков `words`
+    def determine_bucket_size(self, info: RequestInfo):
+        """ Определяет общее число хидеров на запрос для сайта
 
         :param info:
-        :param words: Названия заголовков
-        :return:    dict([(`header`, `reasons`)]) - если найдено конкретное слово
-                    int - если со словами требуется провести манипуляции
+        :return:
         """
+        # Если размер порции установлен либо находится в процессе определения, то пропустить
+        if self.bucket_size_cache[info.netloc].get('bucket') or self.bucket_size_cache[info.netloc].get('in_progress'):
+            return
 
-        # Добавляем заголовки в запрос
-        request = info.copy_request()
-        headers = {k: v for k, v in zip(words, [info.header_value] * len(words))}
-        self.add_headers(request, headers)
+        self.bucket_size_cache[info.netloc]['in_progress'] = True
 
-        response = self.do_request(request, )
-        # Если не удалось получить ответ на запрос, то возвращаем слова в очередь
-        if response is None:
-            self.logger.error(
-                f'[{info.origin_url}] Ошибка при выполнении запроса, '
-                'порция возвращена в очередь')
-            return RETRY_WORDS
-
-        reasons = self.get_header_finder_reasons(info, response)
-
-        # Если есть изменения
-        if reasons:
-            # Если найден конкретный заголовок, то возвращаем его вместе с причинами
-            if len(words) == 1:
-                self.logger.success(f'Найден заголовок "{words[0]}" к {info.origin_url}')
-                return {words[0]: {'url': info.origin_url, 'reasons': reasons, 'type': SecretType.HEADER,
-                                   'response': response}}
-            # Иначе где-то среди слов есть искомые
-            else:
-                return SPLIT_WORDS
-        # Иначе отбросить
+        if self.arguments.disable_dynamic_headers:
+            self.bucket_size_cache[info.netloc]['bucket'] = self.arguments.header_bucket
         else:
-            return DISCARD_WORDS
+            self.bucket_size_cache[info.netloc]['bucket'] = self.get_optimal_bucket(info)
 
     def do_request(self, prepared_request: PreparedRequest, **kwargs) -> Union[requests.Response, None]:
         """ Выполняет подготовленных запрос с отчисткой промежуточного кэша
@@ -116,39 +94,52 @@ class HeaderFinder(BaseFinder):
 
         return super().do_request(prepared_request, )
 
-    def find_secret_headers(self, requests_list: List[RequestInfo]):
-        args_queue = Queue()
-        results_queue = Queue()
+    def find_secrets(self, info: RequestInfo, words: List[str]):
+        """
 
-        # формируем список аргументов
-        for info in requests_list:
-            wordlist = list(set(self.wordlist) | set(info.additional_headers))
-            words_chunks = [wordlist[i:i + info.header_bucket] for i in
-                            range(0, len(wordlist), info.header_bucket)]
-            for words_chunk in words_chunks:
-                args_queue.put((info, words_chunk))
+        :param info:
+        :param words:
+        :return:
+        """
+        request = info.copy_request()
+        headers = {k: v for k, v in zip(words, [info.header_value] * len(words))}
+        self.add_headers(request, headers)
 
-        # Запускаем воркеры
-        self.do_work(GuessWorker, self.check_secret_headers, args_queue, results_queue)
+        response = self.do_request(request)
+        # Если не удалось получить ответ на запрос, то возвращаем слова в очередь
+        if response is None:
+            self.logger.error(
+                f'[{info.origin_url}] Ошибка при выполнении запроса, '
+                'порция возвращена в очередь')
+            return RETRY_WORDS
 
-        return self.parse_results_queue(results_queue)
+        reasons = self.check_response(info, response)
 
-    def get_header_finder_reasons(self, info: RequestInfo, response: Response) -> list:
-        reasons = []
+        # Если есть изменения
+        if reasons:
+            # Если найден конкретный заголовок, то возвращаем его вместе с причинами
+            if len(words) == 1:
+                self.logger.success(f'Найден заголовок "{words[0]}" к {info.origin_url}')
+                return {words[0]: {'url': info.origin_url, 'reasons': reasons, 'type': ParamLocation.HEADER,
+                                   'response': response}}
+            # Иначе где-то среди слов есть искомые
+            else:
+                return SPLIT_WORDS
+        # Иначе отбросить
+        else:
+            return DISCARD_WORDS
 
-        self.check_status_code_reason(reasons, info, response)
-        self.check_content_type_reason(reasons, info, response)
-        self.check_content_length_reason(reasons, info, response)
-        self.check_header_value_reflection_reason(reasons, info, response)
+    def get_bucket_size(self, info: RequestInfo):
+        """ Возвращает общие число хидеров в запросе """
+        return info.header_bucket
 
-        return reasons
-
-    def get_optimal_headers_bucket(self, info: RequestInfo) -> int:
+    def get_optimal_bucket(self, info: RequestInfo, **kwargs) -> int:
         """ Ищет оптимальный размер числа доп. заголовков в запросе через соотношение (число заголовков) / (время ответа)
 
         :return:
         """
-        return super().get_optimal_bucket(info, 1, self.add_random_headers)
+        additional_size = lambda _info: len(_info.request.headers.keys())
+        return super().get_optimal_bucket(info, self.min_header_chunk, self.add_random_headers, additional_size)
 
     def get_random_header(self) -> Tuple[str, str]:
         """ Генерирует случайную пару (`key`, `value`) """
@@ -156,71 +147,29 @@ class HeaderFinder(BaseFinder):
         value = ''.join([random.choice(CACHE_BUSTER_ALF) for _ in range(self.max_header_value)])
         return key, value
 
-    def make_session(self, **kwargs) -> Session:
-        """ Создаёт сессию для отправки подготовленных запросов """
-        return super().make_session(self.proxies)
+    def get_word_chunks(self, info: RequestInfo):
+        wordlist = list(set(self.headers_wordlist) | set(info.additional_headers))
+        chunk_size = info.header_bucket - len(info.request.headers.keys())
 
-    def run(self):
-        self.logger.info('Запуск HeaderFinder')
+        word_chunks = [wordlist[i:i + chunk_size] for i in range(0, len(wordlist), chunk_size)]
+        return word_chunks
 
-        # Устанавливаем базовое значение всех заголовков
-        for info in self.requests_list:
-            info.setup_header_properties(self.max_header_value)
+    def set_bucket_size(self, info: RequestInfo):
+        """ Устанавивает для запроса в `info` общее число хидеров """
+        bucket_size = self.bucket_size_cache[info.netloc].get('bucket')
 
-        # Устанавливаем размер числа доп. заголовков для запросов
-        self.logger.info('Установка числа доп. заголовков для запросов')
-        self.set_headers_bucket(self.requests_list)
-
-        # TODO: Проверка и корректировка header_bucket при отсутствии --dynamic-header-bucket
-        # Фильтруем запросы, для которых размер доп. заголовков установить не удалось
-        requests_list = self.filter_requests(self.requests_list, lambda x: x.header_bucket is None,
-                                                  'Для следующих запросов не удалось установить размер доп. заголовков',
-                                                  'Не удалось установить размер доп. заголовков на все запросы')
-        if requests_list is None:
-            return dict()
-
-        self.logger.info('Поиск скрытых заголовков')
-        # Находим секретные заголовки
-        return self.find_secret_headers(requests_list)
-
-    def set_headers_bucket(self, requests_list: List[RequestInfo]):
-        if not len(requests_list):
-            return
-
-        # Если требуется для каждого веб-приложения выбрать оптимальное значение `header_bucket`
-        if not self.arguments.disable_dynamic_headers:
-            # Для каждого сайта выбираем первый запрос из списка
-            netloc_info = dict()
-            for info in requests_list:
-                if netloc_info.get(info.netloc):
-                    continue
-                netloc_info[info.netloc] = {'request_info': info, 'header_bucket': None}
-
-            # Формируем список запросов для определения размера чанков
-            info_list = [value['request_info'] for _, value in netloc_info.items()]
-
-            # Распределяем задачу между воркерами
-            worker = lambda chunk: [self.get_optimal_headers_bucket(info) for info in chunk]
-            chunk_size = ceil(len(info_list) / self.threads)
-            info_chunks = [info_list[i:i + chunk_size] for i in range(0, len(info_list), chunk_size)]
-
-            # Получаем список оптимальных размеров чанков
-            jobs = [gevent.spawn(worker, chunk) for chunk in info_chunks]
-            gevent.joinall(jobs)
-            optimal_buckets = sum([job.value for job in jobs], [])
-
-            # Заносим полученные результаты в `netloc_info`
-            for info, size in zip(info_list, optimal_buckets):
-                netloc_info[info.netloc]['header_bucket'] = size
-
-            # Устанавливаем их по всем остальным запросам
-            for info in requests_list:
-
-                if netloc_info[info.netloc]['header_bucket'] is None:
-                    info.header_bucket = None
-                else:
-                    info.header_bucket = netloc_info[info.netloc]['header_bucket'] - len(info.request.headers)
-        # Иначе выставляем всем одинаковое
+        if bucket_size:
+            info.header_bucket = self.bucket_size_cache[info.netloc].get('bucket') - len(info.request.headers.keys())
         else:
-            for info in requests_list:
-                info.header_bucket = self.arguments.header_bucket - len(info.request.headers)
+            info.header_bucket = None
+
+    def setup_requests_info(self, info_list: List[RequestInfo]):
+        for info in info_list:
+            info.base_header_value = ''.join(
+                [random.choice(CACHE_BUSTER_ALF) for _ in
+                 range(self.max_header_value - len(info.header_value_breaker))])
+            info.header_value = info.base_header_value + info.header_value_breaker
+
+    def is_info_searchable(self, info: RequestInfo):
+        return True
+

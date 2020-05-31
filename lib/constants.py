@@ -29,7 +29,7 @@ USER_AGENTS = [
 ]
 
 
-class SecretType:
+class ParamLocation:
     URL = "URL param"
     HEADER = "Header"
     BODY = "Body"

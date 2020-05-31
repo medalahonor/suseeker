@@ -4,7 +4,7 @@ import random
 import re
 from urllib.parse import urlparse, urlunparse
 
-from lib.utils.constants import USER_AGENTS
+from lib.constants import USER_AGENTS
 from lib.utils.request_helper import parse_raw_request
 
 

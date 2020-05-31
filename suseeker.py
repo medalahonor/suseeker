@@ -1,14 +1,12 @@
-import __init__  # ДОЛЖЕН БЫТЬ ПЕРВЫМ ИМПОРТОМ !!!
-
-from time import time
+import __init__
 
 import sys
+from time import time
 
 from lib.arguments import parse_args, is_args_valid, prepare_args
 from lib.finders.base_finder import BaseFinder
-from lib.finders.header_finder import HeaderFinder
-from lib.finders.param_finder import ParamFinder
-from lib.finders.params_miner import get_params_from_html
+from lib.finders.finder import Finder
+from lib.miners.source_miner import get_params_from_html
 from lib.utils.logger import Logger
 from lib.utils.request_helper import RequestHelper, RequestInfo, get_request_objects
 
@@ -76,13 +74,15 @@ if __name__ == '__main__':
 
     results = dict()
 
-    if args.find_headers:
-        secret_headers = HeaderFinder(requests_list, args, logger).run()
-        results = BaseFinder.update_results(results, secret_headers)
 
-    if args.find_params:
-        secret_params = ParamFinder(requests_list, args, logger).run()
-        results = BaseFinder.update_results(results, secret_params)
+    results = Finder(requests_list, args, logger).run()
+    # if args.find_headers:
+    #     secret_headers = HeaderFinder(requests_list, args, logger).run()
+    #     results = BaseFinder.update_results(results, secret_headers)
+    #
+    # if args.find_params:
+    #     secret_params = ParamFinder(requests_list, args, logger).run()
+    #     results = BaseFinder.update_results(results, secret_params)
 
     stop = time()
     # временное решение

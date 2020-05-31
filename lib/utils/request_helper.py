@@ -12,7 +12,7 @@ import requests
 from bs4 import BeautifulSoup
 from requests import PreparedRequest, Response, Session
 
-from lib.utils.constants import CACHE_BUSTER_ALF
+from lib.constants import CACHE_BUSTER_ALF
 from lib.utils.logger import Logger
 
 
@@ -25,12 +25,17 @@ class RequestInfo:
         self.netloc = urlparse(request.url).netloc
         self.response_html_tags_count: int = None
 
-        self.url_param_bucket: int = None  # Размер порции проверяемых параметров в URL (в байтах)
-        self.body_param_bucket: int = None  # Размер порции проверяемых параметров в теле запроса (в байтах)
-        self.param_value_breaker = quote_plus('<a`\'"${{\\')  # Суффикс `self.base_param_value` для определения аномалий
-        self.base_param_value: str = None  # Базовое значение всех значений параметров
-        self.param_value: str = None  # Актуальное значение всех значений параметров
         self.additional_params: list = []  # Список дополнительных параметров для данного запроса
+
+        self.url_param_bucket: int = None  # Размер порции искомых параметров в URL (в байтах)
+        self.url_param_value_breaker = quote_plus('<a`\'"${{\\')
+        self.url_base_param_value: str = None  # Базовое значение всех значений URL параметров
+        self.url_param_value: str = None  # Актуальное значение всех значений URL параметров
+
+        self.body_param_bucket: int = None  # Размер порции искомых параметров в теле запроса (в байтах)
+        self.body_param_value_breaker = quote_plus('<a`\'"${{\\')
+        self.body_base_param_value: str = None  # Базовое значение всех значений body параметров
+        self.body_param_value: str = None  # Актуальное значение всех значений body параметров
 
         self.header_bucket: int = None  # Размер порции проверяемых хидеров (количество)
         self.base_header_value: str = None  # Базовое значение всех заголовков
@@ -74,15 +79,15 @@ class RequestInfo:
         self.header_value = self.base_header_value + self.header_value_breaker
 
     def setup_param_properties(self, max_param_value):
-        """ Устанавливает свойства `self.base_param_value` и `self.param_value` """
-        self.base_param_value = ''.join(
-            [random.choice(CACHE_BUSTER_ALF) for _ in range(max_param_value - len(self.param_value_breaker))])
-        self.param_value = self.base_param_value + self.param_value_breaker
+        """ Устанавливает свойства `self.url_base_param_value` и `self.url_param_value` """
+        self.url_base_param_value = ''.join(
+            [random.choice(CACHE_BUSTER_ALF) for _ in range(max_param_value - len(self.url_param_value_breaker))])
+        self.url_param_value = self.url_base_param_value + self.url_param_value_breaker
 
 
 class RequestHelper:
-    def __init__(self, requests_list: List[RequestInfo], arguments: argparse.Namespace, logger: logging.Logger):
-        self.requests_list = requests_list
+    def __init__(self, info_list: List[RequestInfo], arguments: argparse.Namespace, logger: logging.Logger):
+        self.info_list = info_list
         self.arguments = arguments
         self.logger = logger
 
@@ -148,7 +153,7 @@ class RequestHelper:
     @staticmethod
     def set_origin_responses(requests_list: List[RequestInfo], threads: int, retry: int, timeout: int, proxies: dict,
                              allow_redirects: bool, logger: Logger):
-        """ Помещает изначальные ответы от сервера в соответствующие объекты из `requests_list` """
+        """ Помещает изначальные ответы от сервера в соответствующие объекты из `info_list` """
         worker = lambda chunk: [
             RequestHelper.get_origin_response(request, retry, timeout, proxies, allow_redirects, logger) for
             request in chunk]
@@ -276,11 +281,3 @@ def get_request_objects(parsed_requests: list, threads: int, retry: int, timeout
             prepared_requests.append(prepared_request)
 
     return prepared_requests, not_prepared_requests
-
-
-def split_body_params(body: str) -> List[tuple]:
-    return [(match[0], match[2]) for match in re.findall('([^?:&=$]+)(=([^?:&=$]+))?', body)]
-
-
-def join_body_params(params: List[tuple]) -> str:
-    return '&'.join(['='.join(pair) if pair[1] else pair[0] for pair in params])
