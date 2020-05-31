@@ -127,6 +127,9 @@ class UrlFinder(BaseFinder):
 
         return chunks
 
+    def is_info_searchable(self, info: RequestInfo):
+        return True
+
     def set_bucket_size(self, info: RequestInfo):
         bucket_size = self.bucket_size_cache[info.netloc].get('bucket')
 
@@ -144,6 +147,3 @@ class UrlFinder(BaseFinder):
                 [random.choice(CACHE_BUSTER_ALF) for _ in
                  range(self.max_url_param_value - len(info.url_param_value_breaker))])
             info.url_param_value = info.url_base_param_value + info.url_param_value_breaker
-
-    def is_info_searchable(self, info: RequestInfo):
-        return True

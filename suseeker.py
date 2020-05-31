@@ -72,17 +72,7 @@ if __name__ == '__main__':
             info.additional_params = list(site_params[info.netloc])[::]
             info.additional_headers = list(site_params[info.netloc])[::]
 
-    results = dict()
-
-
     results = Finder(requests_list, args, logger).run()
-    # if args.find_headers:
-    #     secret_headers = HeaderFinder(requests_list, args, logger).run()
-    #     results = BaseFinder.update_results(results, secret_headers)
-    #
-    # if args.find_params:
-    #     secret_params = ParamFinder(requests_list, args, logger).run()
-    #     results = BaseFinder.update_results(results, secret_params)
 
     stop = time()
     # временное решение

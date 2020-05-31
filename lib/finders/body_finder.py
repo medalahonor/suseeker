@@ -42,9 +42,6 @@ class BodyFinder(BaseFinder):
         random_param = ''.join(random.choice(CACHE_BUSTER_ALF) for _ in range(param_size))
         self.add_body_params(request, [(random_param, '')])
 
-    def split_body_params(self, body: str) -> List[tuple]:
-        return [(match[0], match[2]) for match in re.findall('([^?:&=$]+)(=([^?:&=$]+))?', body)]
-
     def determine_bucket_size(self, info: RequestInfo):
         """ Определяет общий размер тела запроса для сайта в байтах
 
@@ -61,16 +58,6 @@ class BodyFinder(BaseFinder):
             self.bucket_size_cache[info.netloc]['bucket'] = self.arguments.param_bucket
         else:
             self.bucket_size_cache[info.netloc]['bucket'] = self.get_optimal_bucket(info)
-
-    def get_body_param_reasons(self, info: RequestInfo, response: Response) -> list:
-        reasons = []
-
-        checker.check_status_code_reason(reasons, info, response)
-        checker.check_content_length_reason(reasons, info, response)
-        checker.check_content_type_reason(reasons, info, response)
-        checker.check_param_value_reflection_reason(reasons, info, response)
-
-        return reasons
 
     def find_secrets(self, info: RequestInfo, words: List[str]):
         """ Проверяет изменения в ответе для заданного списка параметров `words` в теле запроса
@@ -111,12 +98,22 @@ class BodyFinder(BaseFinder):
         else:
             return DISCARD_WORDS
 
-    def get_optimal_bucket(self, info: RequestInfo, **kwargs):
-        additional_size = lambda _info: len(info.request.body) if info.request.body else 0
-        return super().get_optimal_bucket(info, self.min_body_param_chunk, self.add_random_body_param, additional_size)
+    def get_body_param_reasons(self, info: RequestInfo, response: Response) -> list:
+        reasons = []
+
+        checker.check_status_code_reason(reasons, info, response)
+        checker.check_content_length_reason(reasons, info, response)
+        checker.check_content_type_reason(reasons, info, response)
+        checker.check_param_value_reflection_reason(reasons, info, response)
+
+        return reasons
 
     def get_bucket_size(self, info: RequestInfo):
         return info.body_param_bucket
+
+    def get_optimal_bucket(self, info: RequestInfo, **kwargs):
+        additional_size = lambda _info: len(info.request.body) if info.request.body else 0
+        return super().get_optimal_bucket(info, self.min_body_param_chunk, self.add_random_body_param, additional_size)
 
     def get_word_chunks(self, info: RequestInfo):
         chunks = []
@@ -150,6 +147,9 @@ class BodyFinder(BaseFinder):
             return False
 
         return True
+
+    def split_body_params(self, body: str) -> List[tuple]:
+        return [(match[0], match[2]) for match in re.findall('([^?:&=$]+)(=([^?:&=$]+))?', body)]
 
     def set_bucket_size(self, info: RequestInfo):
         bucket_size = self.bucket_size_cache[info.netloc].get('bucket')

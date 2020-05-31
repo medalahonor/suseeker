@@ -6,8 +6,8 @@ import requests
 from requests import PreparedRequest, Response
 
 import lib.checker as checker
-from lib.finders.base_finder import BaseFinder
 from lib.constants import *
+from lib.finders.base_finder import BaseFinder
 from lib.utils.request_helper import RequestInfo
 
 
@@ -172,4 +172,3 @@ class HeaderFinder(BaseFinder):
 
     def is_info_searchable(self, info: RequestInfo):
         return True
-
