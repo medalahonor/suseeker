@@ -6,7 +6,7 @@ RETRY_WORDS = 2
 SPLIT_WORDS = 3
 
 # Причины определения заколовков или параметров как скрытых
-DIFF_HTML_TAGS_COUNT ='diff_html_tags_count'
+DIFF_HTML_TAGS_COUNT = 'diff_html_tags_count'
 DIFF_CONTENT_LENGTH = 'diff_content_length'
 DIFF_STATUS_CODE = 'diff_status_code'
 DIFF_CONTENT_TYPE = 'diff_content_type'
@@ -34,3 +34,14 @@ class ParamLocation:
     HEADER = "Header"
     BODY = "Body"
     JSON = "Json"
+
+
+class OutputFormats:
+    TABLE = 'table'
+    JSON = 'json'
+    LIGHT = 'light'
+
+    @staticmethod
+    def get_list():
+        return [OutputFormats.__dict__[attr] for attr in OutputFormats.__dict__ if
+                not attr.startswith('_') and isinstance(OutputFormats.__dict__[attr], str)]

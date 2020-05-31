@@ -210,65 +210,6 @@ class BaseFinder(RequestHelper):
 
         return results
 
-    # TODO: Вынести в класс Reporter
-    @staticmethod
-    def results_to_table(results):
-        """ Работает, не трогай
-
-        :param results:
-        :return:
-        """
-        report = ''
-        report_list = []
-
-        table = ['Адрес', 'Тип параметра', 'Параметр', 'Причины']
-
-        table_frmt = '{:^{}}'
-        row_frmt = '{:^{}}'
-        sep_frmt = '{:-^{}}'
-
-        max_url, max_type, max_name, max_reason = map(len, table)
-        same_url = same_type = same_name = False
-
-        get_val = lambda val, same: '' if same else val
-
-        for url in results:
-            max_url = len(url) if len(url) > max_url else max_url
-
-            for type in results[url]:
-                max_type = len(type) if len(type) > max_type else max_type
-
-                for param_info in results[url][type]:
-                    name = param_info['param']
-                    max_name = len(name) if len(name) > max_name else max_name
-
-                    for reason_info in param_info['reasons']:
-                        reason = str(reason_info['reason']) + ': ' + str(reason_info['value'])
-
-                        max_reason = len(reason) if len(reason) > max_reason else max_reason
-
-                        row = [get_val(url, same_url), get_val(type, same_type), get_val(name, same_name), reason]
-                        report_list.append(row)
-
-                        same_url = same_type = same_name = True
-
-                    same_name = False
-                same_type = False
-            same_url = False
-
-        sep = '\n' + '---'.join(
-            [sep_frmt.format('', length) for length in [max_url, max_type, max_name, max_reason]]) + '\n'
-
-        report += sep + ' | '.join([table_frmt.format(item, length) for item, length in
-                                    zip(table, [max_url, max_type, max_name, max_reason])]) + sep
-
-        for row in report_list:
-            line = ' | '.join(
-                [row_frmt.format(item, length) for item, length in zip(row, [max_url, max_type, max_name, max_reason])])
-            report += ''.join([line, sep])
-
-        return report
-
     @staticmethod
     def shift_bounds(left_bound: int, right_bound: int) -> Tuple[int, int, int]:
         """ Сдвигает тройку `left`, `cur`, `right` согласно новым границам `left_bound` и `right_bound` """

@@ -2,6 +2,10 @@
 URL_HELP = "URL-адрес ресурса или файл с адресами для поиска"
 METHOD_HELP = "Метод запроса для адресов из --url"
 RAW_REQUESTS_HELP = "Файл/папка с сырым/сырыми HTTP-запросом/запросами"
+OUTPUT_HELP = "Путь до файла с результатами работы"
+OUTPUT_FORMAT_HELP = "Формат вывода результата: table - таблица [Адрес, Тип параметра, Параметр, Причины]; " \
+                     "json - {<url>: {<param_type>: [{\"param\": <param_name>, \"reasons\": [...]}], ...}, ...}; " \
+                     "light - <url>: <param_type>:<param_name>; ..."
 ADDITIONAL_HEADERS_HELP = "Дополнительные хидеры к запросам, можно указывать несколько раз. Например: --header='User-Agent: Mozilla' --header='X-Forwarded-Host: test'"
 ALLOW_REDIRECTS_HELP = "Позволить переходить по указанным адресам при редиректах"
 DISABLE_MINING_HELP = "Выключить поиск параметров в контенте HTML страниц и скриптов"

@@ -4,9 +4,9 @@ import sys
 from time import time
 
 from lib.arguments import parse_args, is_args_valid, prepare_args
-from lib.finders.base_finder import BaseFinder
 from lib.finders.finder import Finder
 from lib.miners.source_miner import get_params_from_html
+from lib.reporter import Reporter
 from lib.utils.logger import Logger
 from lib.utils.request_helper import RequestHelper, RequestInfo, get_request_objects
 
@@ -75,9 +75,10 @@ if __name__ == '__main__':
     results = Finder(requests_list, args, logger).run()
 
     stop = time()
-    # временное решение
-    print(BaseFinder.results_to_table(results))
+
+    reporter = Reporter(args, results)
+    reporter.report()
 
     if args.verbosity >= 1:
         elapsed = round(stop - start, 2)
-        print(f'Время работы: {elapsed} сек')
+        print(f'\nВремя работы: {elapsed} сек')
