@@ -124,6 +124,8 @@ class Reporter:
 
                     if param_type == ParamLocation.HEADER:
                         type_color = Fore.YELLOW + param_type + Style.RESET_ALL
+                    elif param_type == ParamLocation.URL:
+                        type_color = Fore.LIGHTGREEN_EX + param_type + Style.RESET_ALL
                     elif param_type == ParamLocation.BODY:
                         type_color = Fore.GREEN + param_type + Style.RESET_ALL
                     elif param_type == ParamLocation.COOKIE:
