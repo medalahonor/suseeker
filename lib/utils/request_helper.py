@@ -11,6 +11,7 @@ import gevent
 import requests
 from bs4 import BeautifulSoup
 from requests import PreparedRequest, Response, Session
+from requests.utils import super_len
 
 from lib.constants import CACHE_BUSTER_ALF
 from lib.utils.logger import Logger
@@ -214,6 +215,8 @@ def parse_raw_request(raw_request: str) -> tuple:
         other, body = re.split('\r?\n\r?\n', raw_request, maxsplit=1)
         head, headers = re.split('\r?\n', other, maxsplit=1)
 
+    body = body.strip() if body is not None else ''
+
     method, uri, *other = head.split(' ')
     host = re.search('Host:\s*(.+)\r?\n', headers).group(1)
     url = host + '/' + uri.lstrip('/')
@@ -231,6 +234,7 @@ def get_request_object(method, url, headers, body, retry: int, timeout: int, pro
     """
     scheme = 'https'
     prepared_request = requests.Request('HEAD', scheme + '://' + url.lstrip('/'), headers, data=body).prepare()
+    prepared_request.headers['Content-Length'] = super_len(body)
 
     try:
         RequestHelper.do_request(prepared_request, retry, timeout, proxies, allow_redirects, logger, True)
@@ -239,7 +243,10 @@ def get_request_object(method, url, headers, body, retry: int, timeout: int, pro
     except requests.exceptions.ConnectionError:
         return None
 
-    return requests.Request(method, scheme + '://' + url, headers, data=body).prepare()
+    prepared_request = requests.Request(method, scheme + '://' + url, headers, data=body).prepare()
+    prepared_request.headers['Content-Length'] = super_len(body)
+
+    return prepared_request
 
 
 def get_request_objects(parsed_requests: list, threads: int, retry: int, timeout: int, proxies: dict,
