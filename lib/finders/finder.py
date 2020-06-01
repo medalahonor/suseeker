@@ -3,6 +3,7 @@ from gevent.queue import Queue
 
 from lib.finders.base_finder import BaseFinder
 from lib.finders.body_finder import BodyFinder
+from lib.finders.cookie_finder import CookieFinder
 from lib.finders.header_finder import HeaderFinder
 from lib.finders.url_finder import UrlFinder
 from lib.workers import FindSecretsWorker, SetBucketWorker
@@ -15,6 +16,7 @@ class Finder(BaseFinder):
         self.header_finder = HeaderFinder(*args, **kwargs)
         self.url_finder = UrlFinder(*args, **kwargs)
         self.body_finder = BodyFinder(*args, **kwargs)
+        self.cookie_finder = CookieFinder(*args, **kwargs)
 
         self.finders = []
 
@@ -25,6 +27,9 @@ class Finder(BaseFinder):
         if self.arguments.find_params:
             self.finders.append(self.url_finder)
             self.finders.append(self.body_finder)
+
+        if self.arguments.find_cookies:
+            self.finders.append(self.cookie_finder)
 
     def run(self):
         self.setup_finders()

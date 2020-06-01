@@ -11,6 +11,7 @@ import gevent
 import requests
 from bs4 import BeautifulSoup
 from requests import PreparedRequest, Response, Session
+from requests.cookies import cookiejar_from_dict
 from requests.utils import super_len
 
 from lib.constants import CACHE_BUSTER_ALF
@@ -39,10 +40,14 @@ class RequestInfo:
         self.body_param_value: str = None  # Актуальное значение всех значений body параметров
 
         self.header_bucket: int = None  # Размер порции проверяемых хидеров (количество)
-        self.base_header_value: str = None  # Базовое значение всех заголовков
         self.header_value_breaker = '<a`\'"${{\\'  # Суффикс `self.base_header_value` для определения аномалий
+        self.base_header_value: str = None  # Базовое значение всех заголовков
         self.header_value: str = None  # Актуальное значение всех заголовков
-        self.additional_headers: list = []  # Список дополнительных заголовков для данного запроса
+
+        self.cookie_bucket: int = None  # Размер порции проверяемых параметров в Cookie (в байтах)
+        self.cookie_value_breaker = '<a`\'"${{\\'  # кодировать символы ,;
+        self.base_cookie_value: str = None
+        self.cookie_value: str = None
 
     @property
     def response(self):
@@ -226,14 +231,18 @@ def parse_raw_request(raw_request: str) -> tuple:
     return method, url, headers, body
 
 
-def get_request_object(method, url, headers, body, retry: int, timeout: int, proxies: dict,
+def get_request_object(method: str, url: str, headers: dict, body: str, retry: int, timeout: int, proxies: dict,
                        allow_redirects: bool, logger: Logger) -> Union[requests.PreparedRequest, None]:
     """ Формирует из кортежа `(method, url, headers, body)` объект класса PreparedRequest
 
     Для определения схемы HTTP(S) отправляется HEAD HTTP-запрос и коду ответа решается данный вопрос
     """
     scheme = 'https'
-    prepared_request = requests.Request('HEAD', scheme + '://' + url.lstrip('/'), headers, data=body).prepare()
+    cookies = cookiejar_from_dict(dict(re.findall('([^=,;]*)=([^,;]*)', headers.get('Cookie', ''))))
+
+    prepared_request = requests.Request('HEAD', scheme + '://' + url.lstrip('/'), headers, data=body,
+                                        cookies=cookies).prepare()
+
     prepared_request.headers['Content-Length'] = super_len(body)
 
     try:
@@ -243,7 +252,7 @@ def get_request_object(method, url, headers, body, retry: int, timeout: int, pro
     except requests.exceptions.ConnectionError:
         return None
 
-    prepared_request = requests.Request(method, scheme + '://' + url, headers, data=body).prepare()
+    prepared_request = requests.Request(method, scheme + '://' + url, headers, data=body, cookies=cookies).prepare()
     prepared_request.headers['Content-Length'] = super_len(body)
 
     return prepared_request

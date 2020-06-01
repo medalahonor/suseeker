@@ -17,7 +17,7 @@ class BodyFinder(BaseFinder):
 
         self.params_wordlist = self.arguments.param_wordlist
 
-        self.max_body_param_name = max([len(w) for w in self.arguments.param_wordlist])
+        self.max_body_param_name = max([len(w) for w in self.params_wordlist])
         self.max_body_param_value = 35
         self.min_body_param_chunk = 1 + self.max_body_param_name + 1 + self.max_body_param_value
 
@@ -67,10 +67,9 @@ class BodyFinder(BaseFinder):
                 :return:    dict([(`param`, `reasons`)]) - если найдено конкретное слово
                             int - если со словами требуется провести манипуляции
                 """
-
         # Добавляем параметры в URL-строку
         request = info.copy_request()
-        params = [(k, v) for k, v in zip(words, [info.url_param_value] * len(words))]
+        params = [(k, v) for k, v in zip(words, [info.body_param_value] * len(words))]
         self.add_body_params(request, params)
 
         response = self.do_request(request)
@@ -123,13 +122,13 @@ class BodyFinder(BaseFinder):
         wordlist = list(set(self.params_wordlist) | set(info.additional_params))
 
         for w in wordlist:
-            # [?&]param=value
-            current_chunk_len += 1 + len(w) + 1 + len(info.url_param_value)
+            # &?param=value
+            current_chunk_len += 1 + len(w) + 1 + len(info.body_param_value)
 
-            if current_chunk_len > info.url_param_bucket:
+            if current_chunk_len > info.body_param_bucket:
                 chunks.append(current_chunk)
                 current_chunk = []
-                current_chunk_len = 1 + len(w) + 1 + len(info.url_param_value)
+                current_chunk_len = 1 + len(w) + 1 + len(info.body_param_value)
 
             current_chunk.append(w)
 

@@ -70,7 +70,6 @@ if __name__ == '__main__':
         logger.debug(f'Новые параметры для поиска: {site_params}')
         for info in requests_list:
             info.additional_params = list(site_params[info.netloc])[::]
-            info.additional_headers = list(site_params[info.netloc])[::]
 
     results = Finder(requests_list, args, logger).run()
 

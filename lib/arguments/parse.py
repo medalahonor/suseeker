@@ -59,6 +59,10 @@ def parse_args() -> argparse.Namespace:
                                   default=False, help=DISABLE_DYNAMIC_PARAMS_HELP)
 
     cookies_group = parser.add_argument_group('Настройка поиска cookies')
+    cookies_group.add_argument('-fc', '--find-cookies', dest='find_cookies', action='store_true', default=False, help=FIND_COOKIES_HELP)
+    cookies_group.add_argument('-cw', '--cookie-wordlist', dest='cookie_wordlist', default='wordlists/params.txt', help=COOKIE_WORDLIST_HELP)
+    cookies_group.add_argument('-cb', '--cookie-bucket', dest='cookie_bucket', type=int, default=2048, help=COOKIE_BUCKET_HELP)
+    cookies_group.add_argument('-ddc', '--disable-dynamic-cookies', dest='disable_dynamic_cookies', action='store_true', default=False, help=DISABLE_DYNAMIC_COOKIES_HELP)
 
     performance_group = parser.add_argument_group('Настройки производительности')
     performance_group.add_argument('--proxy', dest='proxy', default=None, help=PROXY_HELP)

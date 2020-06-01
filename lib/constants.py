@@ -10,7 +10,10 @@ DIFF_HTML_TAGS_COUNT = 'diff_html_tags_count'
 DIFF_CONTENT_LENGTH = 'diff_content_length'
 DIFF_STATUS_CODE = 'diff_status_code'
 DIFF_CONTENT_TYPE = 'diff_content_type'
+# HEADER_NAME_REFLECTION = 'header_name_reflection'
 HEADER_VALUE_REFLECTION = 'header_value_reflection'
+# COOKIE_NAME_REFLECTION = 'cookie_name_reflection'
+COOKIE_VALUE_REFLECTION = 'cookie_value_reflection'
 PARAM_VALUE_REFLECTION = 'param_value_reflection'
 
 USER_AGENTS = [

@@ -26,17 +26,21 @@ def is_args_valid(arguments: argparse.Namespace) -> bool:
             print('Указанного пути -r не существует')
             return False
 
-    if not os.path.exists(arguments.param_wordlist):
+    if not os.path.isfile(arguments.param_wordlist):
         print(f'Файла аргумента --param-wordlist по пути {arguments.param_wordlist} не существует')
         return False
 
-    if not os.path.exists(arguments.header_wordlist):
+    if not os.path.isfile(arguments.header_wordlist):
         print(f'Файла аргумента --header-wordlist по пути {arguments.header_wordlist} не существует')
         return False
 
-    if not (arguments.find_headers or arguments.find_params):
-        print('Не указан тип сканирования --find-headers или --find-params')
+    if not os.path.isfile(arguments.cookie_wordlist):
+        print(f'Файла аргумента --cookie-wordlist по пути {arguments.cookie_wordlist} не существует')
         return False
+
+    # if not (arguments.find_headers or arguments.find_params):
+    #     print('Не указан тип сканирования --find-headers или --find-params')
+    #     return False
 
     if arguments.retry <= 0:
         print('Общее число попыток --retry выполнить запрос должно быть больше 0')

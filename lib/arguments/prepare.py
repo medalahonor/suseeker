@@ -86,6 +86,21 @@ def prepare_header_wordlist(arguments: argparse.Namespace):
     return header_wordlist
 
 
+def prepare_cookie_wordlist(arguments: argparse.Namespace):
+    cookie_wordlist = []
+
+    with open(arguments.cookie_wordlist) as file:
+        allow_regex = '^[^=,;]*$'
+
+        for line in file:
+            word = line.strip()
+
+            if re.search(allow_regex, word):
+                cookie_wordlist.append(word)
+
+    return cookie_wordlist
+
+
 def prepare_proxy(arguments: argparse.Namespace):
     url_obj = urlparse(arguments.proxy)
 
@@ -120,6 +135,10 @@ def prepare_args(arguments: argparse.Namespace):
     # --header-wordlist
     if arguments.header_wordlist:
         arguments.header_wordlist = prepare_header_wordlist(arguments)
+
+    # --cookie-wordlist
+    if arguments.cookie_wordlist:
+        arguments.cookie_wordlist = prepare_cookie_wordlist(arguments)
 
     # --proxy
     if arguments.proxy:

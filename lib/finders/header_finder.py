@@ -148,7 +148,7 @@ class HeaderFinder(BaseFinder):
         return key, value
 
     def get_word_chunks(self, info: RequestInfo):
-        wordlist = list(set(self.headers_wordlist) | set(info.additional_headers))
+        wordlist = list(set(self.headers_wordlist) | set(info.additional_params))
         chunk_size = info.header_bucket - len(info.request.headers.keys())
 
         word_chunks = [wordlist[i:i + chunk_size] for i in range(0, len(wordlist), chunk_size)]

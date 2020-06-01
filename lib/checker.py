@@ -36,11 +36,32 @@ def check_content_length_reason(reasons: list, info: RequestInfo, response: Resp
 
 def check_header_value_reflection_reason(reasons: list, info: RequestInfo, response: Response):
     # Если базовое значение заголовка отражается в ответе
-    if info.base_header_value in response.text:
-        orig_reflections = len(re.findall(info.base_header_value, info.response.text))
-        reflections = len(re.findall(info.base_header_value, response.text))
+    headers = '\n'.join([': '.join([k, v]) for k, v in response.headers.items()])
+    raw_response = '\n'.join([response.url, headers, response.text])
+
+    if info.base_header_value in raw_response:
+        orig_headers = '\n'.join([': '.join([k, v]) for k, v in info.response.headers.items()])
+        orig_raw_response = '\n'.join([info.response.url, orig_headers, info.response.text])
+
+        orig_reflections = len(re.findall(info.base_header_value, orig_raw_response))
+        reflections = len(re.findall(info.base_header_value, raw_response))
 
         reasons.append({'reason': HEADER_VALUE_REFLECTION,
+                        'value': f'{reflections} ({orig_reflections})'})
+
+
+def check_cookie_value_reflection_reason(reasons: list, info: RequestInfo, response: Response):
+    headers = '\n'.join([': '.join([k, v]) for k, v in response.headers.items()])
+    raw_response = '\n'.join([response.url, headers, response.text])
+
+    if info.cookie_value in raw_response:
+        orig_headers = '\n'.join([': '.join([k, v]) for k, v in info.response.headers.items()])
+        orig_raw_response = '\n'.join([info.response.url, orig_headers, info.response.text])
+
+        orig_reflections = len(re.findall(info.base_cookie_value, orig_raw_response))
+        reflections = len(re.findall(info.base_cookie_value, raw_response))
+
+        reasons.append({'reason': COOKIE_VALUE_REFLECTION,
                         'value': f'{reflections} ({orig_reflections})'})
 
 

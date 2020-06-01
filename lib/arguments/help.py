@@ -23,6 +23,12 @@ PARAM_WORDLIST_HELP = "Словарь параметров"
 PARAM_BUCKET_HELP = "Максимальный размер порции параметров в URL или теле запроса (в байтах)"
 DISABLE_DYNAMIC_PARAMS_HELP = "Отключить определение максмиального размера параметров в запросе по соотношению (размер порции)/(время ответа)"
 
+# Настройка поиска Cookie
+FIND_COOKIES_HELP = ""
+COOKIE_WORDLIST_HELP = ""
+COOKIE_BUCKET_HELP = ""
+DISABLE_DYNAMIC_COOKIES_HELP = ""
+
 # Настройки производительности
 PROXY_HELP = "Адрес прокси-сервера (пока только http/https)"
 THREADS_HELP = "Количество потоков для поиска скрытых параметров и хидеров"
