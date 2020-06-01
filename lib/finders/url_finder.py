@@ -72,7 +72,7 @@ class UrlFinder(BaseFinder):
         params = {k: v for k, v in zip(words, [info.url_param_value] * len(words))}
         self.add_url_params(request, params)
 
-        response = self.do_request(request, )
+        response = self.do_request(request)
 
         # Если не удалось получить ответ на запрос, то возвращаем слова в очередь
         if response is None:

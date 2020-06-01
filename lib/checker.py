@@ -68,16 +68,12 @@ def check_cookie_value_reflection_reason(reasons: list, info: RequestInfo, respo
 def check_param_value_reflection_reason(reasons: list, info: RequestInfo, response: Response):
     # Если базовое значение параметра отражается в ответе
     if info.url_base_param_value in response.text:
+        reflection = re.compile(f'((https?:)?/?/[^;\'"]+)?({info.url_base_param_value}).*$')
         # То дополнительно проверяем, чтобы отраженное значение не было частью URL
-        reflections = len([match for match in
-                           re.findall(f'(https?://[^;\'"]+)?({info.url_base_param_value})', response.text) if
-                           not match[0]])
+        reflections = len([match for match in reflection.findall(response.text) if not match[0]])
 
         if reflections:
-            orig_reflections = len([match for match in
-                                    re.findall(f'(https?://[^;\'"]+)?({info.url_base_param_value})', info.response.text)
-                                    if
-                                    not match[0]])
+            orig_reflections = len([match for match in reflection.findall(info.response.text) if not match[0]])
             reasons.append({'reason': PARAM_VALUE_REFLECTION, 'value': f'{reflections} ({orig_reflections})'})
 
 

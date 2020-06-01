@@ -8,6 +8,7 @@ from typing import List, Union, Callable, Tuple
 from urllib.parse import urlparse, quote_plus
 
 import gevent
+import lxml.html
 import requests
 from bs4 import BeautifulSoup
 from requests import PreparedRequest, Response, Session
@@ -69,13 +70,12 @@ class RequestInfo:
         :return: int
         """
         try:
-            soup = BeautifulSoup(html, features='html5lib')
-
-            if not soup.is_xml:
+            if lxml.html.fromstring(html).find('.//*') is None:
                 return 0
 
+            soup = BeautifulSoup(html, features='lxml')
             return len(soup.find_all())
-        except:
+        except Exception as e:
             return 0
 
     def setup_header_properties(self, max_header_value):
@@ -208,10 +208,10 @@ class RequestHelper:
         return filtered_requests
 
 
-def parse_raw_request(raw_request: str) -> tuple:
+def parse_raw_request(raw_request: str) -> list:
     """ Парсит сырой запрос и вычленяет из него метод, url-адрес, заголовки и тело запроса
 
-    :return: Кортеж `(method, url, headers, body)`
+    :return: Список `[method, url, headers, body]`
     """
     if not re.search('\r?\n\r?\n', raw_request):
         head, headers = re.split('\r?\n', raw_request, maxsplit=1)
@@ -228,7 +228,7 @@ def parse_raw_request(raw_request: str) -> tuple:
     headers = {key: value for key, value in
                [re.split('\s*:\s*', line.strip(), maxsplit=1) for line in re.split('\r?\n', headers.strip())]}
 
-    return method, url, headers, body
+    return [method, url, headers, body]
 
 
 def get_request_object(method: str, url: str, headers: dict, body: str, retry: int, timeout: int, proxies: dict,
@@ -258,38 +258,65 @@ def get_request_object(method: str, url: str, headers: dict, body: str, retry: i
     return prepared_request
 
 
-def get_request_objects(parsed_requests: list, threads: int, retry: int, timeout: int, proxies: dict,
-                        allow_redirects: bool, logger: Logger) -> Tuple:
+def get_request_objects(parsed_requests: list, arguments: argparse.Namespace,  logger: Logger) -> Tuple:
     """ Применяет функцию `get_request_object` на запросы из `parsed_requests` с числом потоков `threads`
 
     :param parsed_requests:
-    :param threads:
-    :param retry:
-    :param timeout:
-    :param proxies:
-    :param allow_redirects:
+    :param arguments:
     :param logger:
 
     :return:    Кортеж `(prepared_requests, not_prepared_requests)`, где prepared_requests - список объектов класса
                 `requests.PreparedRequest`, а not_prepared_requests - список неподготовленных URL'ов типа `str`
     """
+    threads = arguments.threads
+    retry = arguments.retry
+    timeout = arguments.timeout
+    proxies = arguments.proxy
+    allow_redirects = arguments.allow_redirects
 
     def worker(requests_chunk):
         return [get_request_object(*parsed_request, retry=retry, timeout=timeout, proxies=proxies,
                                    allow_redirects=allow_redirects, logger=logger) for parsed_request in
                 requests_chunk]
 
+    # Если требуется установить тело запроса
+    if arguments.body is not None:
+        _parsed_requests = []
+
+        for parsed_request in parsed_requests:
+            # Если метод запроса не отвечает за "действие", то пропускаем
+            if parsed_request[0].upper() in {'GET', 'HEAD', 'OPTIONS', 'TRACE', 'CONNECT'}:
+                _parsed_requests.append(parsed_request)
+                continue
+
+            # Если тело запроса установлено, то пропускаем
+            if parsed_request[3]:
+                _parsed_requests.append(parsed_request)
+                continue
+
+            # Иначе меняем тело запроса и тип контента
+            parsed_request[3] = arguments.body
+            parsed_request[2]['Content-Type'] = 'application/x-www-form-urlencoded'
+
+            _parsed_requests.append(parsed_request)
+
+        parsed_requests = _parsed_requests
+
+    # Создаем порции с распаршенными запросами
     chunk_size = math.ceil(len(parsed_requests) / threads)
     req_chunks = [parsed_requests[i:i + chunk_size] for i in range(0, len(parsed_requests), chunk_size)]
 
+    # Запускаем воркеры
     jobs = [gevent.spawn(worker, chunk) for chunk in req_chunks]
     gevent.joinall(jobs)
 
+    # Получаем результаты
     _requests = sum([job.value for job in jobs], [])
 
     prepared_requests = []
     not_prepared_requests = []
 
+    # Разбиваем запросы на подготовленные и неподготовленные
     for prepared_request, parsed_request in zip(_requests, parsed_requests):
         if prepared_request is None:
             not_prepared_requests.append(parsed_request[1])

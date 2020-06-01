@@ -30,9 +30,7 @@ if __name__ == '__main__':
     start = time()
 
     # Преобразовываем сырые запросы в объекты типа `requests.PreparedRequest`
-    prepared_requests, not_prepared_requests = get_request_objects(args.raw_requests, args.threads, args.retry,
-                                                                   args.timeout, args.proxy, args.allow_redirects,
-                                                                   logger)
+    prepared_requests, not_prepared_requests = get_request_objects(args.raw_requests, args, logger)
 
     if len(prepared_requests) == 0:
         logger.error('Не удалось обработать запросы')
