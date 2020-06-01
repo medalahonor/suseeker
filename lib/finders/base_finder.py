@@ -211,6 +211,16 @@ class BaseFinder(RequestHelper):
         return results
 
     @staticmethod
+    def parse_results(results: list):
+        _results = defaultdict(lambda: defaultdict(list))
+        for result in results:
+            for param_name, value in result.items():
+                url, reasons, type, response = value['url'], value['reasons'], value['type'], value['response']
+                _results[url][type].append({'param': param_name, 'reasons': reasons, 'response': response})
+
+        return _results
+
+    @staticmethod
     def shift_bounds(left_bound: int, right_bound: int) -> Tuple[int, int, int]:
         """ Сдвигает тройку `left`, `cur`, `right` согласно новым границам `left_bound` и `right_bound` """
         cur = (left_bound + right_bound) // 2

@@ -1,3 +1,5 @@
+import heapq
+
 import gevent
 from gevent.queue import Queue
 
@@ -6,6 +8,7 @@ from lib.finders.body_finder import BodyFinder
 from lib.finders.cookie_finder import CookieFinder
 from lib.finders.header_finder import HeaderFinder
 from lib.finders.url_finder import UrlFinder
+from lib.structures import PrioritizedItem
 from lib.workers import FindSecretsWorker, SetBucketWorker
 
 
@@ -45,7 +48,7 @@ class Finder(BaseFinder):
         self.logger.info('Поиск скрытых параметров и заголовков')
         return self.find_secrets()
 
-    def setup_requests_info(self):
+    def setup_requests_info(self, **kwargs):
         for finder in self.finders:
             finder.setup_requests_info(self.info_list)
 
@@ -88,11 +91,13 @@ class Finder(BaseFinder):
                 self.logger.debug(
                     f'{finder.__class__.__name__}: {info.origin_url} - размер порции {finder.get_bucket_size(info)}')
 
-    def find_secrets(self):
-        args_queue = Queue()
-        results_queue = Queue()
+    def find_secrets(self, **kwargs):
+        # min-heap
+        args_heapq = []
+        results = []
 
         # формируем список аргументов
+        args = []
         for finder in self.finders:
             for info in self.info_list:
 
@@ -108,17 +113,17 @@ class Finder(BaseFinder):
 
                 word_chunks = finder.get_word_chunks(info)
 
-                for chunk in word_chunks:
-                    args_queue.put((finder.find_secrets, info, chunk))
+                for priority, chunk in enumerate(word_chunks):
+                    heapq.heappush(args_heapq, PrioritizedItem(priority, (finder.find_secrets, info, chunk)))
 
         # Запускаем воркеры
-        workers = [FindSecretsWorker(args_queue, results_queue, self.logger)
+        workers = [FindSecretsWorker(args_heapq, results, self.logger)
                    for _ in range(self.threads)]
 
         greenlets = [gevent.spawn(worker.run) for worker in workers]
 
         # Ждем заверщения работы
-        while any([worker.is_running() for worker in workers]) or args_queue.qsize():
+        while any([worker.is_running() for worker in workers]) or len(args_heapq):
             gevent.sleep(0)
 
         # Выключаем воркеры
@@ -128,4 +133,4 @@ class Finder(BaseFinder):
         # Ждем выключения
         gevent.joinall(greenlets)
 
-        return self.parse_results_queue(results_queue)
+        return self.parse_results(results)

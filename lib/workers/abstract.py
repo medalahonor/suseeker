@@ -15,3 +15,5 @@ class AbstractWorker:
 
     def is_stopped(self):
         return self._stopped
+
+
