@@ -5,7 +5,7 @@ from urllib.parse import unquote, urlparse
 from requests import PreparedRequest
 
 import lib.checker as checker
-from lib.constants import CACHE_BUSTER_ALF, RETRY_WORDS, SPLIT_WORDS, DISCARD_WORDS, ParamLocation
+from lib.constants import CACHE_BUSTER_ALF, RETRY_WORDS, SPLIT_WORDS, DISCARD_WORDS, ParamType
 from lib.finders.base_finder import BaseFinder
 from lib.utils.request_helper import RequestInfo
 
@@ -38,15 +38,18 @@ class UrlFinder(BaseFinder):
         :param info:
         :return:
         """
-        if self.bucket_size_cache[info.netloc].get('bucket') or self.bucket_size_cache[info.netloc].get('in_progress'):
+        url_param_bucket = self.bucket_size_cache[info.netloc]['url_param_bucket']
+
+        # Если размер порции установлен либо находится в процессе определения, то пропустить
+        if url_param_bucket.get('size') or url_param_bucket.get('in_progress'):
             return
 
-        self.bucket_size_cache[info.netloc]['in_progress'] = True
+        url_param_bucket['in_progress'] = True
 
         if self.arguments.disable_dynamic_params:
-            self.bucket_size_cache[info.netloc]['bucket'] = self.arguments.param_bucket
+            url_param_bucket['size'] = self.arguments.param_bucket
         else:
-            self.bucket_size_cache[info.netloc]['bucket'] = self.get_optimal_bucket(info)
+            url_param_bucket['size'] = self.get_optimal_bucket(info)
 
     def get_url_param_reasons(self, info, response) -> List:
         reasons = []
@@ -61,15 +64,17 @@ class UrlFinder(BaseFinder):
     def find_secrets(self, info: RequestInfo, words: List[str]):
         """ Проверяет изменения в ответе для заданного списка параметров `words` в URL-строке
 
-                :param info:
-                :param words: Названия заголовков
-                :return:    dict([(`param`, `reasons`)]) - если найдено конкретное слово
-                            int - если со словами требуется провести манипуляции
-                """
+        :param info:
+        :param words: Названия заголовков
+        :return:    dict([(`param`, `reasons`)]) - если найдено конкретное слово
+                    int - если со словами требуется провести манипуляции
+        """
 
         # Добавляем параметры в URL-строку
         request = info.copy_request()
         params = {k: v for k, v in zip(words, [info.url_param_value] * len(words))}
+        param_type = ParamType.URL
+
         self.add_url_params(request, params)
 
         response = self.do_request(request)
@@ -87,8 +92,8 @@ class UrlFinder(BaseFinder):
         if reasons:
             # Если найден конкретный заголовок, то возвращаем его вместе с причинами
             if len(words) == 1:
-                self.logger.success(f'Найден URL-параметр "{words[0]}" к {info.origin_url}')
-                return {words[0]: {'url': info.origin_url, 'reasons': reasons, 'type': ParamLocation.URL,
+                self.logger.success(f'Найден {param_type}-параметр "{words[0]}" к {info.origin_url}')
+                return {words[0]: {'url': info.origin_url, 'reasons': reasons, 'type': param_type,
                                    'response': response}}
             # Иначе где-то среди слов есть искомые
             else:
@@ -131,7 +136,7 @@ class UrlFinder(BaseFinder):
         return True
 
     def set_bucket_size(self, info: RequestInfo):
-        bucket_size = self.bucket_size_cache[info.netloc].get('bucket')
+        bucket_size = self.bucket_size_cache[info.netloc]['url_param_bucket'].get('size')
 
         if bucket_size:
             info.url_param_bucket = bucket_size - len(urlparse(info.origin_url).query)

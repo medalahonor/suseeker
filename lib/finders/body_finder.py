@@ -6,7 +6,7 @@ from urllib.parse import parse_qs, unquote
 from requests import PreparedRequest, Response
 
 import lib.checker as checker
-from lib.constants import CACHE_BUSTER_ALF, RETRY_WORDS, SPLIT_WORDS, DISCARD_WORDS, ParamLocation
+from lib.constants import CACHE_BUSTER_ALF, RETRY_WORDS, SPLIT_WORDS, DISCARD_WORDS, ParamType
 from lib.finders.base_finder import BaseFinder
 from lib.utils.request_helper import RequestInfo
 
@@ -48,16 +48,18 @@ class BodyFinder(BaseFinder):
         :param info:
         :return:
         """
+        body_param_bucket = self.bucket_size_cache[info.netloc]['body_param_bucket']
+
         # Если размер порции установлен либо находится в процессе определения, то пропустить
-        if self.bucket_size_cache[info.netloc].get('bucket') or self.bucket_size_cache[info.netloc].get('in_progress'):
+        if body_param_bucket.get('size') or body_param_bucket.get('in_progress'):
             return
 
-        self.bucket_size_cache[info.netloc]['in_progress'] = True
+        body_param_bucket['in_progress'] = True
 
         if self.arguments.disable_dynamic_params:
-            self.bucket_size_cache[info.netloc]['bucket'] = self.arguments.param_bucket
+            body_param_bucket['size'] = self.arguments.param_bucket
         else:
-            self.bucket_size_cache[info.netloc]['bucket'] = self.get_optimal_bucket(info)
+            body_param_bucket['size'] = self.get_optimal_bucket(info)
 
     def find_secrets(self, info: RequestInfo, words: List[str]):
         """ Проверяет изменения в ответе для заданного списка параметров `words` в теле запроса
@@ -70,6 +72,8 @@ class BodyFinder(BaseFinder):
         # Добавляем параметры в URL-строку
         request = info.copy_request()
         params = [(k, v) for k, v in zip(words, [info.body_param_value] * len(words))]
+        param_type = ParamType.BODY
+
         self.add_body_params(request, params)
 
         response = self.do_request(request)
@@ -87,8 +91,8 @@ class BodyFinder(BaseFinder):
         if reasons:
             # Если найден конкретный заголовок, то возвращаем его вместе с причинами
             if len(words) == 1:
-                self.logger.success(f'Найден body-параметр "{words[0]}" к {info.origin_url}')
-                return {words[0]: {'url': info.origin_url, 'reasons': reasons, 'type': ParamLocation.BODY,
+                self.logger.success(f'Найден {param_type}-параметр "{words[0]}" к {info.origin_url}')
+                return {words[0]: {'url': info.origin_url, 'reasons': reasons, 'type': param_type,
                                    'response': response}}
             # Иначе где-то среди слов есть искомые
             else:
@@ -151,7 +155,7 @@ class BodyFinder(BaseFinder):
         return [(match[0], match[2]) for match in re.findall('([^?:&=$]+)(=([^?:&=$]+))?', body)]
 
     def set_bucket_size(self, info: RequestInfo):
-        bucket_size = self.bucket_size_cache[info.netloc].get('bucket')
+        bucket_size = self.bucket_size_cache[info.netloc]['body_param_bucket'].get('size')
 
         if bucket_size:
             info.body_param_bucket = bucket_size - (len(info.request.body) if info.request.body else 0)

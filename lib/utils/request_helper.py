@@ -40,6 +40,10 @@ class RequestInfo:
         self.body_base_param_value: str = None  # Базовое значение всех значений body параметров
         self.body_param_value: str = None  # Актуальное значение всех значений body параметров
 
+        self.json_param_value_breaker = '<a`\'"${{\\'
+        self.json_base_param_value: str = None  # Базовое значение всех значений body параметров
+        self.json_param_value: str = None  # Актуальное значение всех значений body параметров
+
         self.header_bucket: int = None  # Размер порции проверяемых хидеров (количество)
         self.header_value_breaker = '<a`\'"${{\\'  # Суффикс `self.base_header_value` для определения аномалий
         self.base_header_value: str = None  # Базовое значение всех заголовков
@@ -258,7 +262,7 @@ def get_request_object(method: str, url: str, headers: dict, body: str, retry: i
     return prepared_request
 
 
-def get_request_objects(parsed_requests: list, arguments: argparse.Namespace,  logger: Logger) -> Tuple:
+def get_request_objects(parsed_requests: list, arguments: argparse.Namespace, logger: Logger) -> Tuple:
     """ Применяет функцию `get_request_object` на запросы из `parsed_requests` с числом потоков `threads`
 
     :param parsed_requests:

@@ -10,15 +10,24 @@ from lib.utils.request_helper import RequestHelper, RequestInfo
 
 
 class BaseFinder(RequestHelper):
+    # Формат:
+    #  {'example.com:8443': {'some_bucket': {'size': Union[int, None], 'in_progress': Union[bool, None]}, ...}, ...}
+    bucket_size_cache = defaultdict(lambda: defaultdict(dict))
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        self.bucket_size_cache = defaultdict(dict)
 
     def determine_bucket_size(self, info: RequestInfo):
         raise NotImplementedError
 
     def find_secrets(self, info: RequestInfo, words: List[str]):
+        """ Проверяет изменения в ответе для заданного списка параметров `words` в теле запроса
+
+        :param info:
+        :param words: Названия параметров
+        :return:    dict([(`param`, `reasons`)]) - если найдено конкретное слово
+                    int - если со словами требуется провести манипуляции
+        """
         raise NotImplementedError
 
     def get_bucket_size(self, info: RequestInfo):

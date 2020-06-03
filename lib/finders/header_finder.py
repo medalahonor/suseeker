@@ -1,5 +1,4 @@
 import random
-from collections import defaultdict
 from typing import Union, List, Tuple
 
 import requests
@@ -16,8 +15,6 @@ class HeaderFinder(BaseFinder):
         super().__init__(*args, **kwargs)
 
         self.headers_wordlist = self.arguments.header_wordlist
-
-        self.bucket_size_cache = defaultdict(dict)
 
         self.max_header_name = max((len(h) for h in self.headers_wordlist))
         self.max_header_value = 18
@@ -72,16 +69,18 @@ class HeaderFinder(BaseFinder):
         :param info:
         :return:
         """
+        header_bucket = self.bucket_size_cache[info.netloc]['header_bucket']
+
         # Если размер порции установлен либо находится в процессе определения, то пропустить
-        if self.bucket_size_cache[info.netloc].get('bucket') or self.bucket_size_cache[info.netloc].get('in_progress'):
+        if header_bucket.get('size') or header_bucket.get('in_progress'):
             return
 
-        self.bucket_size_cache[info.netloc]['in_progress'] = True
+        header_bucket['in_progress'] = True
 
-        if self.arguments.disable_dynamic_headers:
-            self.bucket_size_cache[info.netloc]['bucket'] = self.arguments.header_bucket
+        if self.arguments.disable_dynamic_params:
+            header_bucket['size'] = self.arguments.header_bucket
         else:
-            self.bucket_size_cache[info.netloc]['bucket'] = self.get_optimal_bucket(info)
+            header_bucket['size'] = self.get_optimal_bucket(info)
 
     def do_request(self, prepared_request: PreparedRequest, **kwargs) -> Union[requests.Response, None]:
         """ Выполняет подготовленных запрос с отчисткой промежуточного кэша
@@ -103,6 +102,8 @@ class HeaderFinder(BaseFinder):
         """
         request = info.copy_request()
         headers = {k: v for k, v in zip(words, [info.header_value] * len(words))}
+        param_type = ParamType.HEADER
+
         self.add_headers(request, headers)
 
         response = self.do_request(request)
@@ -119,8 +120,8 @@ class HeaderFinder(BaseFinder):
         if reasons:
             # Если найден конкретный заголовок, то возвращаем его вместе с причинами
             if len(words) == 1:
-                self.logger.success(f'Найден заголовок "{words[0]}" к {info.origin_url}')
-                return {words[0]: {'url': info.origin_url, 'reasons': reasons, 'type': ParamLocation.HEADER,
+                self.logger.success(f'Найден {param_type}-параметр "{words[0]}" к {info.origin_url}')
+                return {words[0]: {'url': info.origin_url, 'reasons': reasons, 'type': param_type,
                                    'response': response}}
             # Иначе где-то среди слов есть искомые
             else:
@@ -156,10 +157,10 @@ class HeaderFinder(BaseFinder):
 
     def set_bucket_size(self, info: RequestInfo):
         """ Устанавивает для запроса в `info` общее число хидеров """
-        bucket_size = self.bucket_size_cache[info.netloc].get('bucket')
+        bucket_size = self.bucket_size_cache[info.netloc]['header_bucket'].get('size')
 
         if bucket_size:
-            info.header_bucket = self.bucket_size_cache[info.netloc].get('bucket') - len(info.request.headers.keys())
+            info.header_bucket = bucket_size - len(info.request.headers.keys())
         else:
             info.header_bucket = None
 

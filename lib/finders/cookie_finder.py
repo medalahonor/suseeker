@@ -4,7 +4,7 @@ from typing import List
 from requests import PreparedRequest, Response
 
 import lib.checker as checker
-from lib.constants import CACHE_BUSTER_ALF, RETRY_WORDS, SPLIT_WORDS, DISCARD_WORDS, ParamLocation
+from lib.constants import CACHE_BUSTER_ALF, RETRY_WORDS, SPLIT_WORDS, DISCARD_WORDS, ParamType
 from lib.finders.base_finder import BaseFinder
 from lib.utils.request_helper import RequestInfo
 
@@ -66,6 +66,8 @@ class CookieFinder(BaseFinder):
         # Добавляем параметры в URL-строку
         request = info.copy_request()
         cookies = [(k, v) for k, v in zip(words, [info.cookie_value] * len(words))]
+        param_type = ParamType.COOKIE
+
         self.add_cookies(request, cookies)
 
         response = self.do_request(request)
@@ -83,8 +85,8 @@ class CookieFinder(BaseFinder):
         if reasons:
             # Если найден конкретный заголовок, то возвращаем его вместе с причинами
             if len(words) == 1:
-                self.logger.success(f'Найден Cookie-параметр "{words[0]}" к {info.origin_url}')
-                return {words[0]: {'url': info.origin_url, 'reasons': reasons, 'type': ParamLocation.COOKIE,
+                self.logger.success(f'Найден {param_type}-параметр "{words[0]}" к {info.origin_url}')
+                return {words[0]: {'url': info.origin_url, 'reasons': reasons, 'type': param_type,
                                    'response': response}}
             # Иначе где-то среди слов есть искомые
             else:

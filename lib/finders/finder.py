@@ -7,6 +7,7 @@ from lib.finders.base_finder import BaseFinder
 from lib.finders.body_finder import BodyFinder
 from lib.finders.cookie_finder import CookieFinder
 from lib.finders.header_finder import HeaderFinder
+from lib.finders.json_finder import JsonFinder
 from lib.finders.url_finder import UrlFinder
 from lib.structures import PrioritizedItem
 from lib.workers import FindSecretsWorker, SetBucketWorker
@@ -19,19 +20,21 @@ class Finder(BaseFinder):
         self.header_finder = HeaderFinder(*args, **kwargs)
         self.url_finder = UrlFinder(*args, **kwargs)
         self.body_finder = BodyFinder(*args, **kwargs)
+        self.json_finder = JsonFinder(*args, **kwargs)
         self.cookie_finder = CookieFinder(*args, **kwargs)
 
         self.finders = []
 
     def setup_finders(self):
-        if self.arguments.find_headers:
+        if self.arguments.find_headers or self.arguments.find_all:
             self.finders.append(self.header_finder)
 
-        if self.arguments.find_params:
+        if self.arguments.find_params or self.arguments.find_all:
             self.finders.append(self.url_finder)
             self.finders.append(self.body_finder)
+            self.finders.append(self.json_finder)
 
-        if self.arguments.find_cookies:
+        if self.arguments.find_cookies or self.arguments.find_all:
             self.finders.append(self.cookie_finder)
 
     def run(self):
@@ -97,7 +100,6 @@ class Finder(BaseFinder):
         results = []
 
         # формируем список аргументов
-        args = []
         for finder in self.finders:
             for info in self.info_list:
 

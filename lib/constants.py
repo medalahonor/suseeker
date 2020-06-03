@@ -32,7 +32,7 @@ USER_AGENTS = [
 ]
 
 
-class ParamLocation:
+class ParamType:
     URL = "URL"
     HEADER = "HEADER"
     BODY = "BODY"

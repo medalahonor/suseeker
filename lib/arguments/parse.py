@@ -27,6 +27,7 @@ def parse_args() -> argparse.Namespace:
     main_group.add_argument('-m', '--method', dest='method', default='GET', help=METHOD_HELP)
     main_group.add_argument('-d', '--data', dest='body', help=BODY_HELP)
     main_group.add_argument('-r', '--raw-requests', dest='raw_requests', help=RAW_REQUESTS_HELP)
+    main_group.add_argument('-fa', '--find-all', dest='find_all', action='store_true', default=False, help=FIND_ALL_HELP)
     main_group.add_argument('-o', '--output', dest='output', help=OUTPUT_HELP)
     main_group.add_argument('-of', '--output-format', dest='output_format', default=OutputFormats.LIGHT,
                             choices=OutputFormats.get_list(), help=OUTPUT_FORMAT_HELP)

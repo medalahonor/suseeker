@@ -4,7 +4,7 @@ import shutil
 
 from colorama import Fore, Style
 
-from lib.constants import OutputFormats, ParamLocation
+from lib.constants import OutputFormats, ParamType
 
 
 class Reporter:
@@ -122,15 +122,15 @@ class Reporter:
                 for param_info in results[url][param_type]:
                     name = param_info['param']
 
-                    if param_type == ParamLocation.HEADER:
+                    if param_type == ParamType.HEADER:
                         type_color = Fore.YELLOW + param_type + Style.RESET_ALL
-                    elif param_type == ParamLocation.URL:
+                    elif param_type == ParamType.URL:
                         type_color = Fore.LIGHTGREEN_EX + param_type + Style.RESET_ALL
-                    elif param_type == ParamLocation.BODY:
+                    elif param_type == ParamType.BODY:
                         type_color = Fore.GREEN + param_type + Style.RESET_ALL
-                    elif param_type == ParamLocation.COOKIE:
+                    elif param_type == ParamType.COOKIE:
                         type_color = Fore.CYAN + param_type + Style.RESET_ALL
-                    elif param_type == ParamLocation.JSON:
+                    elif param_type == ParamType.JSON:
                         type_color = Fore.MAGENTA + param_type + Style.RESET_ALL
                     else:
                         type_color = param_type
