@@ -2,7 +2,7 @@
 
 Утилита для поиска скрытых параметров в URL, HTTP-заголовках, теле запроса и Cookie-заголовке
 
-[![asciicast](https://asciinema.org/a/gOc8mdz0JecaHrrAuBvUUvwE8.svg)](https://asciinema.org/a/gOc8mdz0JecaHrrAuBvUUvwE8)
+[![asciicast](https://asciinema.org/a/imfUtcwE5tQStFJ2umTFrl8l5.svg)](https://asciinema.org/a/imfUtcwE5tQStFJ2umTFrl8l5)
 
 ## Особенности
 * Поиск в **URL**, **Headers**, **Body** (x-www-form-urlencoded и json) и **Cookie**-заголовке
