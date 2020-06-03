@@ -5,7 +5,7 @@
 [![asciicast](https://asciinema.org/a/gOc8mdz0JecaHrrAuBvUUvwE8.svg)](https://asciinema.org/a/gOc8mdz0JecaHrrAuBvUUvwE8)
 
 ## Особенности
-* Поиск в **URL**, **Headers**, **Body** (только application/x-www-form-urlencoded) и **Cookie**-заголовке
+* Поиск в **URL**, **Headers**, **Body** (x-www-form-urlencoded и json) и **Cookie**-заголовке
 * Конкурентность посредством использования **Greenlets**
 * Возможность использования **множества** сырых HTTP-запросов и URL-адресов
 * Использование очереди с приоритетами для **распределения нагрузки** среди указанных запросов
@@ -33,7 +33,7 @@ pip install -r requirements.txt
 
 ## Запуск
 ``` 
-python3 suseeker.py -u https://example.com -m GET -r <raw_request or folder> --follow -fh -fp -t 6 --timeout 15 --retry 2
+python3 suseeker.py -u <url or file> -m GET -r <raw_request or folder> --follow -fa -t 10 --timeout 15 --retry 2
 ```
 
 ## Todo
@@ -41,7 +41,6 @@ python3 suseeker.py -u https://example.com -m GET -r <raw_request or folder> --f
 * Добавить майнинг параметров из archive.org
 * Добавить обработку запросов из сохраненного burp suite файла
 * Добавить проверку отражения названия параметров в ответе?
-* Поиск параметров в Json
 * Отправлять запросы через PhantomJS либо найти способ рендерить сырые ответы
 * Выводить по окончанию список выполненных проверок для запросов (отдельный параметр)
 * Сохранять сырые ответы для найденных параметров
