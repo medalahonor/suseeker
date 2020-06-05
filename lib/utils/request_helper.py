@@ -30,26 +30,26 @@ class RequestInfo:
         self.additional_params: list = []  # Список дополнительных параметров для данного запроса
 
         self.url_param_bucket: int = None  # Размер порции искомых параметров в URL (в байтах)
-        self.url_param_value_breaker = quote_plus('<a`\'"${{\\')
+        self.url_param_value_breaker = quote_plus('\\\'"`%${{|')
         self.url_base_param_value: str = None  # Базовое значение всех значений URL параметров
         self.url_param_value: str = None  # Актуальное значение всех значений URL параметров
 
         self.body_param_bucket: int = None  # Размер порции искомых параметров в теле запроса (в байтах)
-        self.body_param_value_breaker = quote_plus('<a`\'"${{\\')
+        self.body_param_value_breaker = quote_plus('\\\'"`%${{|')
         self.body_base_param_value: str = None  # Базовое значение всех значений body параметров
         self.body_param_value: str = None  # Актуальное значение всех значений body параметров
 
-        self.json_param_value_breaker = '<a`\'"${{\\'
+        self.json_param_value_breaker = '\\\'"`%${{|'
         self.json_base_param_value: str = None  # Базовое значение всех значений body параметров
         self.json_param_value: str = None  # Актуальное значение всех значений body параметров
 
         self.header_bucket: int = None  # Размер порции проверяемых хидеров (количество)
-        self.header_value_breaker = '<a`\'"${{\\'  # Суффикс `self.base_header_value` для определения аномалий
+        self.header_value_breaker = '\\\'"`%${{|'  # Суффикс `self.base_header_value` для определения аномалий
         self.base_header_value: str = None  # Базовое значение всех заголовков
         self.header_value: str = None  # Актуальное значение всех заголовков
 
         self.cookie_bucket: int = None  # Размер порции проверяемых параметров в Cookie (в байтах)
-        self.cookie_value_breaker = '<a`\'"${{\\'  # кодировать символы ,;
+        self.cookie_value_breaker = '\\\'"`%${{|'  # кодировать символы ,;
         self.base_cookie_value: str = None
         self.cookie_value: str = None
 
