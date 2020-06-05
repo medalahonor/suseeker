@@ -49,14 +49,14 @@ def parse_args() -> argparse.Namespace:
     headers_group.add_argument('-ddh', '--disable-dynamic-headers', dest="disable_dynamic_headers", action="store_true",
                                default=False, help=DISABLE_DYNAMIC_HEADERS_HELP)
 
-    parameters_group = parser.add_argument_group('Настройки поиска параметров')
-    parameters_group.add_argument('-fp', '--find-params', dest='find_params', action='store_true', default=False,
+    params_group = parser.add_argument_group('Настройки поиска параметров')
+    params_group.add_argument('-fp', '--find-params', dest='find_params', action='store_true', default=False,
                                   help=FIND_PARAMS_HELP)
-    parameters_group.add_argument('-pw', '--param-wordlist', dest='param_wordlist', default='wordlists/params.txt',
+    params_group.add_argument('-pw', '--param-wordlist', dest='param_wordlist', default='wordlists/params.txt',
                                   help=PARAM_WORDLIST_HELP)
-    parameters_group.add_argument('-pb', '--param-bucket', dest='param_bucket', type=int, default=2048,
+    params_group.add_argument('-pb', '--param-bucket', dest='param_bucket', type=int, default=2048,
                                   help=PARAM_BUCKET_HELP)
-    parameters_group.add_argument('-ddp', '--disable-dynamic-params', dest='disable_dynamic_params',
+    params_group.add_argument('-ddp', '--disable-dynamic-params', dest='disable_dynamic_params',
                                   action='store_true',
                                   default=False, help=DISABLE_DYNAMIC_PARAMS_HELP)
 

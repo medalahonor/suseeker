@@ -1,9 +1,8 @@
 import argparse
 import logging
-import math
 import random
 import re
-from math import ceil
+import math
 from typing import List, Union, Callable, Tuple
 from urllib.parse import urlparse, quote_plus
 
@@ -169,7 +168,7 @@ class RequestHelper:
             request in chunk]
         prepared_requests = [info.request for info in requests_list]
 
-        chunk_size = ceil(len(prepared_requests) / threads)
+        chunk_size = math.ceil(len(prepared_requests) / threads)
         request_chunks = [prepared_requests[i:i + chunk_size] for i in
                           range(0, len(prepared_requests), chunk_size)]
 
@@ -227,7 +226,7 @@ def parse_raw_request(raw_request: str) -> list:
     body = body.strip() if body is not None else ''
 
     method, uri, *other = head.split(' ')
-    host = re.search('Host:\s*(.+)\r?\n', headers).group(1)
+    host = re.search('Host:\s*(.+?)\r?\n', headers).group(1)
     url = host + '/' + uri.lstrip('/')
     headers = {key: value for key, value in
                [re.split('\s*:\s*', line.strip(), maxsplit=1) for line in re.split('\r?\n', headers.strip())]}

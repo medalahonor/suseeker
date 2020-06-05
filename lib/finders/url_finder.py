@@ -93,6 +93,7 @@ class UrlFinder(BaseFinder):
             # Если найден конкретный заголовок, то возвращаем его вместе с причинами
             if len(words) == 1:
                 self.logger.success(f'Найден {param_type}-параметр "{words[0]}" к {info.origin_url}')
+                self.logger.debug(f'{param_type}-параметр "{words[0]}": reasons={reasons}')
                 return {words[0]: {'url': info.origin_url, 'reasons': reasons, 'type': param_type,
                                    'response': response}}
             # Иначе где-то среди слов есть искомые
@@ -104,7 +105,8 @@ class UrlFinder(BaseFinder):
 
     def get_optimal_bucket(self, info: RequestInfo, **kwargs):
         additional_size = lambda _info: len(urlparse(_info.origin_url).query)
-        return super().get_optimal_bucket(info, self.min_url_param_chunk, self.add_random_url_param, additional_size)
+        return super().get_optimal_bucket(info, self.min_url_param_chunk, self.add_random_url_param, additional_size,
+                                          self.logger)
 
     def get_bucket_size(self, info: RequestInfo):
         return info.url_param_bucket

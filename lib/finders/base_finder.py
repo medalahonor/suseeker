@@ -6,6 +6,7 @@ import gevent
 from gevent.queue import Queue
 from requests import PreparedRequest, Response
 
+from lib.utils.logger import Logger
 from lib.utils.request_helper import RequestHelper, RequestInfo
 
 
@@ -62,7 +63,7 @@ class BaseFinder(RequestHelper):
         return super().filter_requests(*args, **kwargs)
 
     def get_optimal_bucket(self, info: RequestInfo, min_chunk: int, add_random: Callable,
-                           additional_size: Callable) -> Union[int, None]:
+                           additional_size: Callable, logger: Logger) -> Union[int, None]:
         """ Ищет оптимальный размер порции параметров соотношение (Длина порции) / (время ответа)
 
         :param info:
@@ -100,8 +101,26 @@ class BaseFinder(RequestHelper):
             responses = [job.value for job in jobs]
 
             # Получаем результаты
-            results = [response.status_code == info.response.status_code if response is not None else response
-                       for response in responses]
+            results = []
+            # results = [response.status_code == info.response.status_code if response is not None else response
+            #            for response in responses]
+
+            for response in responses:
+                # Если совпадают коды ответа
+                if response.status_code == info.response.status_code:
+                    results.append(True)
+                # Если Payload Too Large/URI Too Long/Request Header Fields Too Large
+                elif response.status_code in {413, 414, 431}:
+                    results.append(False)
+                # Если код ответа на отрезке  [500, 599], а оригинальный код не в этом отрезке
+                elif 500 <= response.status_code < 600 and not 500 <= info.response.status_code < 600:
+                    results.append(False)
+                # Если код ответа на отрезке  [400, 499], а оригинальный код не в этом отрезке
+                elif 400 <= response.status_code < 500 and not 400 <= info.response.status_code < 500:
+                    results.append(False)
+                else:
+                    logger.debug(f'Необработанный случай: act_status_code={response.status_code}, orig_status_cod={info.response.status_code}')
+                    results.append(True)
 
             # Если все запросы не получили ответа от сервера, то сдвигаемся влево
             if not any(results):

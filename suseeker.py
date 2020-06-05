@@ -13,17 +13,13 @@ from lib.utils.request_helper import RequestHelper, RequestInfo, get_request_obj
 if __name__ == '__main__':
     # Обработка аргументов командной строки
     args = parse_args()
-    # Проверка переданных аргументов на валидность и достаточность
-    if not is_args_valid(args):
-        sys.exit(1)
-    # Преобразование аргументов под вид, удобный для работы скрипта
-    prepare_args(args)
-
     logger = Logger(args)
 
-    if not args.raw_requests:
-        logger.error('Нет запросов для проверки, проверьте правильность указанных аргументов --url и -r')
-        sys.exit()
+    # Проверка переданных аргументов на валидность и достаточность
+    if not is_args_valid(args, logger):
+        sys.exit(1)
+    # Преобразование аргументов под вид, удобный для работы скрипта
+    prepare_args(args, logger)
 
     logger.info('Обработка сырых запросов')
 
@@ -38,6 +34,8 @@ if __name__ == '__main__':
 
     if len(not_prepared_requests):
         logger.warning(f'Список не подготовленных запросов: {not_prepared_requests}')
+
+    logger.info(f'Подготовлено запросов: {len(prepared_requests)}')
 
     # Добавляем заголовки в запросы, переданные через командную строку
     if args.additional_headers:

@@ -53,7 +53,7 @@ class CookieFinder(BaseFinder):
 
     def get_optimal_bucket(self, info: RequestInfo, **kwargs):
         additional_size = lambda _info: len(info.request.headers.get('Cookie', ''))
-        return super().get_optimal_bucket(info, self.min_cookie_param_chunk, self.add_random_cookie, additional_size)
+        return super().get_optimal_bucket(info, self.min_cookie_param_chunk, self.add_random_cookie, additional_size, self.logger)
 
     def find_secrets(self, info: RequestInfo, words: List[str]):
         """ Проверяет изменения в ответе для заданного списка параметров `words` в теле запроса
@@ -86,6 +86,7 @@ class CookieFinder(BaseFinder):
             # Если найден конкретный заголовок, то возвращаем его вместе с причинами
             if len(words) == 1:
                 self.logger.success(f'Найден {param_type}-параметр "{words[0]}" к {info.origin_url}')
+                self.logger.debug(f'{param_type}-параметр "{words[0]}": reasons={reasons}')
                 return {words[0]: {'url': info.origin_url, 'reasons': reasons, 'type': param_type,
                                    'response': response}}
             # Иначе где-то среди слов есть искомые

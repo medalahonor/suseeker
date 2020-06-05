@@ -3,7 +3,7 @@ import logging
 import random
 from collections import defaultdict
 from typing import List
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 
 import bs4
 import esprima
@@ -46,8 +46,8 @@ def parse_scripts(inline_scripts: dict):
     """
     site_params = defaultdict(set)
 
-    for netloc, scripts in inline_scripts:
-        for script in list(scripts):
+    for netloc in inline_scripts:
+        for script in list(inline_scripts[netloc]):
             try:
                 for token in esprima.tokenize(script):
                     if token.type == 'Identifier':
@@ -94,12 +94,17 @@ def get_params_from_html(args: argparse.Namespace, requests_list: List[RequestIn
         # Разбиваем скрипты на src и inline
         for script in scripts:
             src = script.attrs.get('src')
-
+            # TODO: фикс
+            # src = /lib/test.js
             if src:
-                src = urlparse(info.request.url).scheme + '://' + src.lstrip('/') if not urlparse(src).scheme else src
-                src_scripts[info.netloc].add(src)
+                src = urlparse(src)
+                target = urlparse(info.request.url)
+
+                src_path = urlunparse([src.scheme or target.scheme, src.netloc or target.netloc, src.path, src.params, src.query, src.fragment])
+                # src = urlparse(info.request.url).scheme + '://' + src.lstrip('/') if not urlparse(src).scheme else src
+                src_scripts[info.netloc].add(src_path)
             else:
-                inline_scripts[info.netloc].add(script.text)
+                inline_scripts[info.netloc].add(script.string)
 
     # Заполняем очередь аргументов
     for netloc, sources in src_scripts.items():
@@ -110,7 +115,7 @@ def get_params_from_html(args: argparse.Namespace, requests_list: List[RequestIn
 
     logger.info('Получение контента скриптов по src')
     # Получаем контент src скриптов
-    work = lambda netloc, src: get_src_script(netloc, src, args.allow_redirects, args.timeout, args.proxies, logger)
+    work = lambda netloc, src: get_src_script(netloc, src, args.allow_redirects, args.timeout, args.proxy, logger)
     workers = [GetScriptsWorker(work, args_queue, results_queue) for _ in range(args.threads)]
 
     greenlets = [gevent.spawn(worker.run) for worker in workers]

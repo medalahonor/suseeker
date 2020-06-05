@@ -121,6 +121,7 @@ class HeaderFinder(BaseFinder):
             # Если найден конкретный заголовок, то возвращаем его вместе с причинами
             if len(words) == 1:
                 self.logger.success(f'Найден {param_type}-параметр "{words[0]}" к {info.origin_url}')
+                self.logger.debug(f'{param_type}-параметр "{words[0]}": reasons={reasons}')
                 return {words[0]: {'url': info.origin_url, 'reasons': reasons, 'type': param_type,
                                    'response': response}}
             # Иначе где-то среди слов есть искомые
@@ -140,7 +141,7 @@ class HeaderFinder(BaseFinder):
         :return:
         """
         additional_size = lambda _info: len(_info.request.headers.keys())
-        return super().get_optimal_bucket(info, self.min_header_chunk, self.add_random_headers, additional_size)
+        return super().get_optimal_bucket(info, self.min_header_chunk, self.add_random_headers, additional_size, self.logger)
 
     def get_random_header(self) -> Tuple[str, str]:
         """ Генерирует случайную пару (`key`, `value`) """
