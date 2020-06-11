@@ -42,7 +42,7 @@ def parse_args() -> argparse.Namespace:
     headers_group = parser.add_argument_group('Настройки поиска хидеров')
     headers_group.add_argument('-fh', '--find-headers', dest='find_headers', action='store_true', default=False,
                                help=FIND_HEADERS_HELP)
-    headers_group.add_argument('-hw', '--header-wordlist', dest='header_wordlist', default='wordlists/headers.txt',
+    headers_group.add_argument('-hw', '--header-wordlists', dest='header_wordlist', default='wordlists/headers.txt',
                                help=HEADER_WORDLIST_HELP)
     headers_group.add_argument('-hb', '--header-bucket', dest='header_bucket', type=int, default=2048,
                                help=HEADER_BUCKET_HELP)
@@ -52,7 +52,7 @@ def parse_args() -> argparse.Namespace:
     params_group = parser.add_argument_group('Настройки поиска параметров')
     params_group.add_argument('-fp', '--find-params', dest='find_params', action='store_true', default=False,
                                   help=FIND_PARAMS_HELP)
-    params_group.add_argument('-pw', '--param-wordlist', dest='param_wordlist', default='wordlists/params.txt',
+    params_group.add_argument('-pw', '--param-wordlists', dest='param_wordlist', default='wordlists/params.txt',
                                   help=PARAM_WORDLIST_HELP)
     params_group.add_argument('-pb', '--param-bucket', dest='param_bucket', type=int, default=2048,
                                   help=PARAM_BUCKET_HELP)
@@ -62,7 +62,7 @@ def parse_args() -> argparse.Namespace:
 
     cookies_group = parser.add_argument_group('Настройка поиска cookies')
     cookies_group.add_argument('-fc', '--find-cookies', dest='find_cookies', action='store_true', default=False, help=FIND_COOKIES_HELP)
-    cookies_group.add_argument('-cw', '--cookie-wordlist', dest='cookie_wordlist', default='wordlists/params.txt', help=COOKIE_WORDLIST_HELP)
+    cookies_group.add_argument('-cw', '--cookie-wordlists', dest='cookie_wordlist', default='wordlists/params.txt', help=COOKIE_WORDLIST_HELP)
     cookies_group.add_argument('-cb', '--cookie-bucket', dest='cookie_bucket', type=int, default=2048, help=COOKIE_BUCKET_HELP)
     cookies_group.add_argument('-ddc', '--disable-dynamic-cookies', dest='disable_dynamic_cookies', action='store_true', default=False, help=DISABLE_DYNAMIC_COOKIES_HELP)
 

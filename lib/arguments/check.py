@@ -1,5 +1,6 @@
 import argparse
 import os
+import re
 from urllib.parse import urlparse
 
 from lib.utils.logger import Logger
@@ -28,17 +29,40 @@ def is_args_valid(arguments: argparse.Namespace, logger: Logger) -> bool:
             logger.error('Указанного пути -r не существует')
             return False
 
-    if not os.path.isfile(arguments.param_wordlist):
-        logger.error(f'Файла аргумента --param-wordlist по пути {arguments.param_wordlist} не существует')
-        return False
+    if arguments.param_wordlist:
+        bad_paths = [path for path in re.split('\s*,\s*', arguments.param_wordlist) if not os.path.isfile(path)]
 
-    if not os.path.isfile(arguments.header_wordlist):
-        logger.error(f'Файла аргумента --header-wordlist по пути {arguments.header_wordlist} не существует')
-        return False
+        if bad_paths:
+            logger.error('Следующие пути --param-wordlists не указывают на словари: ' + '"' + '", "'.join(bad_paths) + '"')
+            return False
+    else:
+        if arguments.find_all or arguments.find_params:
+            logger.error('Требуется указать хотя бы один словарь --param-wordlists для поиска параметров')
+            return False
 
-    if not os.path.isfile(arguments.cookie_wordlist):
-        logger.error(f'Файла аргумента --cookie-wordlist по пути {arguments.cookie_wordlist} не существует')
-        return False
+    if arguments.header_wordlist:
+        bad_paths = [path for path in re.split('\s*,\s*', arguments.header_wordlist) if not os.path.isfile(path)]
+
+        if bad_paths:
+            logger.error(
+                'Следующие пути --header-wordlists не указывают на словари: ' + '"' + '", "'.join(bad_paths) + '"')
+            return False
+    else:
+        if arguments.find_all or arguments.find_headers:
+            logger.error('Требуется указать хотя бы один словарь --header-wordlists для поиска параметров')
+            return False
+
+    if arguments.cookie_wordlist:
+        bad_paths = [path for path in re.split('\s*,\s*', arguments.cookie_wordlist) if not os.path.isfile(path)]
+
+        if bad_paths:
+            logger.error(
+                'Следующие пути --cookie-wordlists не указывают на словари: ' + '"' + '", "'.join(bad_paths) + '"')
+            return False
+    else:
+        if arguments.find_all or arguments.find_cookies:
+            logger.error('Требуется указать хотя бы один словарь --cookie-wordlists для поиска параметров')
+            return False
 
     if not (arguments.find_headers or arguments.find_params or arguments.find_cookies or arguments.find_all):
         logger.error('Не указан тип сканирования --find-headers / --find-params / --find-cookies / --find-all')

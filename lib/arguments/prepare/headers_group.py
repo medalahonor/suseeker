@@ -1,19 +1,28 @@
 import argparse
+import os
 import re
+
 
 from lib.utils.logger import Logger
 
 
 def prepare_header_wordlist(arguments: argparse.Namespace, logger: Logger):
-    header_wordlist = []
+    header_wordlist = set()
 
-    with open(arguments.header_wordlist) as file:
-        allow_regex = '^[A-Za-z0-9_-]+$'
+    wordlist_paths = re.split('\s*,\s*', arguments.header_wordlist)
 
-        for line in file:
-            word = line.strip()
+    for path in wordlist_paths:
+        if not os.path.isfile(path):
+            logger.error(f'Путь "{path}" из --header-wordlist не указывает на словарь с заголовками')
+            continue
 
-            if re.search(allow_regex, word):
-                header_wordlist.append(word)
+        with open(path) as file:
+            allow_regex = '^[A-Za-z0-9_-]+$'
 
-    return header_wordlist
+            for line in file:
+                word = line.strip()
+
+                if re.search(allow_regex, word):
+                    header_wordlist.add(word)
+
+    return list(header_wordlist)
