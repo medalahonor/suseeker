@@ -1,4 +1,5 @@
 import random
+import re
 from typing import List
 
 from requests import PreparedRequest, Response
@@ -53,7 +54,8 @@ class CookieFinder(BaseFinder):
 
     def get_optimal_bucket(self, info: RequestInfo, **kwargs):
         additional_size = lambda _info: len(info.request.headers.get('Cookie', ''))
-        return super().get_optimal_bucket(info, self.min_cookie_param_chunk, self.add_random_cookie, additional_size, self.logger)
+        return super().get_optimal_bucket(info, self.min_cookie_param_chunk, self.add_random_cookie, additional_size,
+                                          self.logger)
 
     def find_secrets(self, info: RequestInfo, words: List[str]):
         """ Проверяет изменения в ответе для заданного списка параметров `words` в теле запроса
@@ -114,7 +116,8 @@ class CookieFinder(BaseFinder):
         current_chunk = []
         current_chunk_len = 0
 
-        wordlist = list(set(self.cookie_wordlist) | set(info.additional_params))
+        cookie_params = set(self.split_cookie_params(info.request.headers.get('Cookie', '')))
+        wordlist = list((set(self.cookie_wordlist) | set(info.additional_params)) - cookie_params)
 
         for w in wordlist:
             # ; param=value
@@ -152,3 +155,6 @@ class CookieFinder(BaseFinder):
                 [random.choice(CACHE_BUSTER_ALF) for _ in
                  range(self.max_cookie_param_value - len(info.cookie_value_breaker))])
             info.cookie_value = info.base_cookie_value + info.cookie_value_breaker
+
+    def split_cookie_params(self, params: str):
+        return re.findall('\s*([^=;]+)=([^;]+)', params)

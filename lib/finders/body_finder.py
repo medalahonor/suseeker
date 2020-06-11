@@ -124,7 +124,8 @@ class BodyFinder(BaseFinder):
         current_chunk = []
         current_chunk_len = 0
 
-        wordlist = list(set(self.params_wordlist) | set(info.additional_params))
+        body_params = set([k for k, v in self.split_body_params(info.request.body or '')])
+        wordlist = list((set(self.params_wordlist) | set(info.additional_params)) - body_params)
 
         for w in wordlist:
             # &?param=value

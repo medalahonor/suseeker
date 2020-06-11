@@ -1,4 +1,5 @@
 import random
+import re
 from typing import List
 from urllib.parse import unquote, urlparse
 
@@ -116,7 +117,8 @@ class UrlFinder(BaseFinder):
         current_chunk = []
         current_chunk_len = 0
 
-        wordlist = list(set(self.params_wordlist) | set(info.additional_params))
+        url_params = set(self.split_url_params(urlparse(info.request.url).query))
+        wordlist = list((set(self.params_wordlist) | set(info.additional_params)) - url_params)
 
         for w in wordlist:
             # [?&]param=value
@@ -154,3 +156,6 @@ class UrlFinder(BaseFinder):
                 [random.choice(CACHE_BUSTER_ALF) for _ in
                  range(self.max_url_param_value - len(info.url_param_value_breaker))])
             info.url_param_value = info.url_base_param_value + info.url_param_value_breaker
+
+    def split_url_params(self, params: str):
+        return [(match[0], match[2]) for match in re.findall('([^?:&=$]+)(=([^?:&=$]+))?', params)]

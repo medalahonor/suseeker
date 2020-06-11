@@ -128,7 +128,8 @@ class JsonFinder(BaseFinder):
         current_chunk = []
         current_chunk_len = 0
 
-        wordlist = list(set(self.params_wordlist) | set(info.additional_params))
+        json_params = set(json.loads(info.request.body).keys())
+        wordlist = list((set(self.params_wordlist) | set(info.additional_params)) - json_params)
 
         for w in wordlist:
             # &?param=value
