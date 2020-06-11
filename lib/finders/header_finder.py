@@ -91,7 +91,7 @@ class HeaderFinder(BaseFinder):
         """
         self.add_cache_buster(prepared_request)
 
-        return super().do_request(prepared_request, )
+        return super().do_request(prepared_request)
 
     def find_secrets(self, info: RequestInfo, words: List[str]):
         """

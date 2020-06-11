@@ -68,6 +68,7 @@ def parse_args() -> argparse.Namespace:
 
     performance_group = parser.add_argument_group('Настройки производительности')
     performance_group.add_argument('--proxy', dest='proxy', default=None, help=PROXY_HELP)
+    performance_group.add_argument('-p', '--delay', dest='delay', default=0, type=float, help=DELAY_HELP)
     performance_group.add_argument('-t', '--threads', dest='threads', default=7, type=int, help=THREADS_HELP)
     performance_group.add_argument('--retry', dest='retry', default=2, type=int, help=RETRY_HELP)
     performance_group.add_argument('--timeout', dest='timeout', default=13, type=int, help=TIMEOUT_HELP)

@@ -30,26 +30,26 @@ class RequestInfo:
         self.additional_params: list = []  # Список дополнительных параметров для данного запроса
 
         self.url_param_bucket: int = None  # Размер порции искомых параметров в URL (в байтах)
-        self.url_param_value_breaker = quote_plus('\\\'"`%${{|')
+        self.url_param_value_breaker = quote_plus('\'"`%${{|\\')
         self.url_base_param_value: str = None  # Базовое значение всех значений URL параметров
         self.url_param_value: str = None  # Актуальное значение всех значений URL параметров
 
         self.body_param_bucket: int = None  # Размер порции искомых параметров в теле запроса (в байтах)
-        self.body_param_value_breaker = quote_plus('\\\'"`%${{|')
+        self.body_param_value_breaker = quote_plus('\'"`%${{|\\')
         self.body_base_param_value: str = None  # Базовое значение всех значений body параметров
         self.body_param_value: str = None  # Актуальное значение всех значений body параметров
 
-        self.json_param_value_breaker = '\\\'"`%${{|'
+        self.json_param_value_breaker = '\'"`%${{|\\'
         self.json_base_param_value: str = None  # Базовое значение всех значений body параметров
         self.json_param_value: str = None  # Актуальное значение всех значений body параметров
 
         self.header_bucket: int = None  # Размер порции проверяемых хидеров (количество)
-        self.header_value_breaker = '\\\'"`%${{|'  # Суффикс `self.base_header_value` для определения аномалий
+        self.header_value_breaker = '\'"`%${{|\\'  # Суффикс `self.base_header_value` для определения аномалий
         self.base_header_value: str = None  # Базовое значение всех заголовков
         self.header_value: str = None  # Актуальное значение всех заголовков
 
         self.cookie_bucket: int = None  # Размер порции проверяемых параметров в Cookie (в байтах)
-        self.cookie_value_breaker = '\\\'"`%${{|'  # кодировать символы ,;
+        self.cookie_value_breaker = '\'"`%${{|\\'  # кодировать символы ,;
         self.base_cookie_value: str = None
         self.cookie_value: str = None
 
@@ -104,6 +104,7 @@ class RequestHelper:
         self.timeout = self.arguments.timeout
         self.threads = self.arguments.threads
         self.proxies = self.arguments.proxy
+        self.delay = self.arguments.delay
         self.retry = self.arguments.retry
 
     @staticmethod
@@ -112,7 +113,7 @@ class RequestHelper:
         request.headers.update(headers)
 
     @staticmethod
-    def do_request(prepared_request: PreparedRequest, retry: int, timeout: int, proxies: dict, allow_redirects: bool,
+    def do_request(prepared_request: PreparedRequest, retry: int, timeout: int, delay: int, proxies: dict, allow_redirects: bool,
                    logger: Logger, propagate_exceptions: bool = False) -> Union[Response, None]:
         """ Выполняет подготовленных запрос
 
@@ -124,8 +125,11 @@ class RequestHelper:
             # Пытаемся получить ответ в течении `retry` раз
             while retry:
                 retry -= 1
+
                 try:
-                    return session.send(prepared_request, allow_redirects=allow_redirects, timeout=timeout)
+                    gevent.sleep(delay)
+                    response = session.send(prepared_request, allow_redirects=allow_redirects, timeout=timeout)
+                    return response
                 except Exception as e:
                     # В случае дебаг режима выводим текст ошибки в stdout
                     logger.error(e)
@@ -143,12 +147,14 @@ class RequestHelper:
         """ Создаёт сессию для отправки подготовленных запросов """
         session = Session()
         session.verify = False
-        session.proxies = proxies
+
+        if proxies:
+            session.proxies = proxies
 
         return session
 
     @staticmethod
-    def get_origin_response(origin_request: PreparedRequest, retry: int, timeout: int, proxies: dict,
+    def get_origin_response(origin_request: PreparedRequest, retry: int, timeout: int, delay: int, proxies: dict,
                             allow_redirects: bool, logger: Logger) -> Union[
         Response, None]:
         """ Получает ответ на оригинальный запрос
@@ -157,14 +163,14 @@ class RequestHelper:
                     Response - если удалось получить ответ от сервера
         """
 
-        return RequestHelper.do_request(origin_request.copy(), retry, timeout, proxies, allow_redirects, logger)
+        return RequestHelper.do_request(origin_request.copy(), retry, timeout, delay, proxies, allow_redirects, logger)
 
     @staticmethod
-    def set_origin_responses(requests_list: List[RequestInfo], threads: int, retry: int, timeout: int, proxies: dict,
-                             allow_redirects: bool, logger: Logger):
+    def set_origin_responses(requests_list: List[RequestInfo], threads: int, retry: int, timeout: int, delay: int,
+                             proxies: dict, allow_redirects: bool, logger: Logger):
         """ Помещает изначальные ответы от сервера в соответствующие объекты из `info_list` """
         worker = lambda chunk: [
-            RequestHelper.get_origin_response(request, retry, timeout, proxies, allow_redirects, logger) for
+            RequestHelper.get_origin_response(request, retry, timeout, delay, proxies, allow_redirects, logger) for
             request in chunk]
         prepared_requests = [info.request for info in requests_list]
 
@@ -234,8 +240,8 @@ def parse_raw_request(raw_request: str) -> list:
     return [method, url, headers, body]
 
 
-def get_request_object(method: str, url: str, headers: dict, body: str, retry: int, timeout: int, proxies: dict,
-                       allow_redirects: bool, logger: Logger) -> Union[requests.PreparedRequest, None]:
+def get_request_object(method: str, url: str, headers: dict, body: str, retry: int, timeout: int, delay: int,
+                       proxies: dict, allow_redirects: bool, logger: Logger) -> Union[requests.PreparedRequest, None]:
     """ Формирует из кортежа `(method, url, headers, body)` объект класса PreparedRequest
 
     Для определения схемы HTTP(S) отправляется HEAD HTTP-запрос и коду ответа решается данный вопрос
@@ -249,7 +255,7 @@ def get_request_object(method: str, url: str, headers: dict, body: str, retry: i
     prepared_request.headers['Content-Length'] = super_len(body)
 
     try:
-        RequestHelper.do_request(prepared_request, retry, timeout, proxies, allow_redirects, logger, True)
+        RequestHelper.do_request(prepared_request, retry, timeout, delay, proxies, allow_redirects, logger, True)
     except requests.exceptions.SSLError:
         scheme = 'http'
     except requests.exceptions.ConnectionError:
@@ -274,11 +280,12 @@ def get_request_objects(parsed_requests: list, arguments: argparse.Namespace, lo
     threads = arguments.threads
     retry = arguments.retry
     timeout = arguments.timeout
+    delay = arguments.delay
     proxies = arguments.proxy
     allow_redirects = arguments.allow_redirects
 
     def worker(requests_chunk):
-        return [get_request_object(*parsed_request, retry=retry, timeout=timeout, proxies=proxies,
+        return [get_request_object(*parsed_request, retry=retry, timeout=timeout, delay=delay, proxies=proxies,
                                    allow_redirects=allow_redirects, logger=logger) for parsed_request in
                 requests_chunk]
 

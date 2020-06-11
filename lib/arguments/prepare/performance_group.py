@@ -5,6 +5,9 @@ from lib.utils.logger import Logger
 
 
 def prepare_proxy(arguments: argparse.Namespace, logger: Logger):
+    if arguments.proxy is None:
+        return None
+
     url_obj = urlparse(arguments.proxy)
 
     if url_obj.scheme.startswith('socks'):

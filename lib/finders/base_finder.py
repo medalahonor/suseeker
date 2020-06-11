@@ -55,7 +55,7 @@ class BaseFinder(RequestHelper):
         :return:    `None` - если по истечении `self.retry` попыток не удалось получить ответ от сервера
                     `requests.Response` - если удалось получить ответ от сервера
         """
-        return super().do_request(prepared_request, self.retry, self.timeout, self.proxies,
+        return super().do_request(prepared_request, self.retry, self.timeout, self.delay, self.proxies,
                                   self.arguments.allow_redirects, self.logger)
 
     def filter_requests(self, *args, **kwargs):
@@ -106,8 +106,10 @@ class BaseFinder(RequestHelper):
             #            for response in responses]
 
             for response in responses:
+                if not response:
+                    results.append(None)
                 # Если совпадают коды ответа
-                if response.status_code == info.response.status_code:
+                elif response.status_code == info.response.status_code:
                     results.append(True)
                 # Если Payload Too Large/URI Too Long/Request Header Fields Too Large
                 elif response.status_code in {413, 414, 431}:

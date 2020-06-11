@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     # Получаем эталонный ответ от сервера для каждого из запросов
     logger.info('Получение эталонного ответа от сервера для каждого из запросов')
-    RequestHelper.set_origin_responses(requests_list, args.threads, args.retry, args.timeout, args.proxy,
+    RequestHelper.set_origin_responses(requests_list, args.threads, args.retry, args.timeout, args.delay, args.proxy,
                                        args.allow_redirects, logger)
 
     # Фильтруем запросы, на которые не удалость получить ответы
