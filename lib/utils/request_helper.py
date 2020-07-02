@@ -2,12 +2,12 @@ import argparse
 import logging
 import random
 import re
-import math
 from typing import List, Union, Callable, Tuple
 from urllib.parse import urlparse, quote_plus
 
 import gevent
 import lxml.html
+import math
 import requests
 from bs4 import BeautifulSoup
 from requests import PreparedRequest, Response, Session
@@ -132,8 +132,6 @@ class RequestHelper:
                     return response
                 except Exception as e:
                     # В случае дебаг режима выводим текст ошибки в stdout
-                    logger.error(e)
-
                     # Поднимаем исключение "вверх"
                     if propagate_exceptions:
                         raise e

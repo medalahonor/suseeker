@@ -107,12 +107,13 @@ class HeaderFinder(BaseFinder):
         self.add_headers(request, headers)
 
         response = self.do_request(request)
-        # Если не удалось получить ответ на запрос, то возвращаем слова в очередь
+
+        # Если не удалось получить ответ на запрос, то убираем слова из очереди
         if response is None:
             self.logger.error(
                 f'[{info.origin_url}] Ошибка при выполнении запроса, '
-                'порция возвращена в очередь')
-            return RETRY_WORDS
+                'порция удалена из учереди')
+            return DISCARD_WORDS
 
         reasons = self.check_response(info, response)
 

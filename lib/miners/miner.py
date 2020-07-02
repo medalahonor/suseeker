@@ -50,7 +50,7 @@ class DownloadWorker(AbstractWorker):
                 content_type, resource = self.download(url, force_content_type)
                 self.logger.debug(f'Загружен ресурс {url} типа {content_type}')
             except Exception as e:
-                self.logger.error(e)
+                self.logger.error(f'Не удалось загрузить ресурс {url} типа {content_type}: {e}')
                 continue
 
             if not content_type or not resource:

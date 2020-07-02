@@ -30,7 +30,6 @@ class AbstractMiner:
         # Удаляем unicode последовательности
         param_name = re.sub(r'\\u\d{4}', '', param_name)
 
-        self.logger.info({'netloc': netloc, 'miner_name': self.miner_name, 'param_name': param_name})
         self.param_queue.put({'netloc': netloc, 'miner_name': self.miner_name, 'param_name': param_name})
 
     def is_acceptable(self, content_type: str) -> bool:

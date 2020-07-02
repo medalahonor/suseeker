@@ -82,12 +82,12 @@ class JsonFinder(BaseFinder):
 
         response = self.do_request(request)
 
-        # Если не удалось получить ответ на запрос, то возвращаем слова в очередь
+        # Если не удалось получить ответ на запрос, то убираем слова из очереди
         if response is None:
             self.logger.error(
                 f'[{info.origin_url}] Ошибка при выполнении запроса, '
-                'порция возвращена в очередь')
-            return RETRY_WORDS
+                'порция удалена из учереди')
+            return DISCARD_WORDS
 
         reasons = self.get_json_param_reasons(info, response)
 
