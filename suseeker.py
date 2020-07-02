@@ -5,7 +5,7 @@ from time import time
 
 from lib.arguments import parse_args, is_args_valid, prepare_args
 from lib.finders.finder import Finder
-from lib.miners.source_miner import get_params_from_html
+from lib.miners import Miner
 from lib.reporter import Reporter
 from lib.utils.logger import Logger
 from lib.utils.request_helper import RequestHelper, RequestInfo, get_request_objects
@@ -60,12 +60,15 @@ if __name__ == '__main__':
 
     # Если требуется собрать параметры со страниц
     if not args.disable_mining:
-        logger.info('Поиск параметров в контенте HTML-страниц и скриптов')
-        site_params = get_params_from_html(args, requests_list, logger)
+        miner = Miner(args, requests_list, logger)
+        params, miner_statistics = miner.run()
 
-        logger.debug(f'Новые параметры для поиска: {site_params}')
-        for info in requests_list:
-            info.additional_params = list(site_params[info.netloc])[::]
+        if params:
+            miner_statistics = ', '.join(['='.join([k, str(v)]) for k, v in miner_statistics.items()])
+            logger.info('Статистика по найденным параметрам:\n\t{}'.format(miner_statistics))
+
+            for info in requests_list:
+                info.additional_params = list(params.get(info.netloc, {}))
 
     results = Finder(requests_list, args, logger).run()
 
