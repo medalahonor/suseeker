@@ -234,4 +234,4 @@ class Miner:
                 domains.add(domain)
                 self.resource_queue.put({'netloc': info.netloc, 'content_type': 'webarchive/download', 'resource': domain})
 
-            self.url_queue.put({'netloc': info.netloc, 'url': info.request})
+            self.url_queue.put({'netloc': info.netloc, 'url': info.origin_url})
