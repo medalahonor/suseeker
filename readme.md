@@ -2,7 +2,7 @@
 
 Утилита для поиска скрытых параметров в URL, HTTP-заголовках, теле запроса и Cookie-заголовке
 
-[![asciicast](https://asciinema.org/a/imfUtcwE5tQStFJ2umTFrl8l5.svg)](https://asciinema.org/a/imfUtcwE5tQStFJ2umTFrl8l5)
+<!--[![asciicast](https://asciinema.org/a/imfUtcwE5tQStFJ2umTFrl8l5.svg)](https://asciinema.org/a/imfUtcwE5tQStFJ2umTFrl8l5)-->
 
 ## Особенности
 * Поиск в **URL**, **Headers**, **Body** (x-www-form-urlencoded и json) и **Cookie**-заголовке
@@ -16,11 +16,10 @@
   <sup>Размер порции</sup>&frasl;<sub>Время ответа</sub>
 * Определение скрытых параметров по изменению **числа тэгов**, **длины контента**,
  **типа контента**, **кода состояния** и **отражений значения** в ответе
-* Поиск **дополнительных параметров** в HTML-страницах и скриптах 
 
 
 ## Требования
-* Python 3.6
+* Python 3.6+
 * Не пытаться ломать логику намеренно
 
 ## Установка

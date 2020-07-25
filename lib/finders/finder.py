@@ -48,7 +48,7 @@ class Finder(BaseFinder):
         self.setup_bucket_sizes()
 
         # Запускаем поиск секретных параметров
-        self.logger.info('Поиск скрытых параметров и заголовков')
+        self.logger.info('Поиск параметров')
         return self.find_secrets()
 
     def setup_requests_info(self, **kwargs):

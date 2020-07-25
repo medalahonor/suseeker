@@ -247,7 +247,7 @@ def get_request_object(method: str, url: str, headers: dict, body: str, retry: i
     scheme = 'https'
     cookies = cookiejar_from_dict(dict(re.findall('([^=,;]*)=([^,;]*)', headers.get('Cookie', ''))))
 
-    prepared_request = requests.Request('HEAD', scheme + '://' + url.lstrip('/'), headers, data=body,
+    prepared_request = requests.Request('GET', scheme + '://' + url.lstrip('/'), headers, data=body,
                                         cookies=cookies).prepare()
 
     prepared_request.headers['Content-Length'] = super_len(body)
