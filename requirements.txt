@@ -7,7 +7,7 @@ esprima==4.0.1
 gevent==20.5.2
 greenlet==0.4.15
 idna==2.9
-lxml==4.5.1
+lxml==4.9.1
 pycparser==2.20
 requests==2.23.0
 soupsieve==2.0.1
